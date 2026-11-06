@@ -14,7 +14,7 @@ This project is not supported or endorsed by Cfx.re, Rockstar Games or Take-Two.
 
 The project owner has previously reported a usable local interface and single-player experience. On 6 November 2026, the recorded work was a preflight of 422 client files, 145 approved vendor program files and three game executables, together with two test groups of 9 and 14 checks. No client start, end-to-end session or server join was performed in that verification. Historical observations are not a fresh-install guarantee.
 
-A subsequent controlled client start on the same day stopped before the menu with Rockstar Launcher connection error **506**. The private crash package confirms that error; its older bundled Rockstar logs do not identify the current cause. A normal same-prefix Rockstar login/startup recovery is being investigated in [issue #7](https://github.com/EnteMods/fivem-macos/issues/7). The publication checks also passed 63 selected tests; this is not a full client or fresh-install acceptance run.
+A subsequent controlled client start on the same day stopped before the menu with Rockstar Launcher connection error **506**. After the owner completed a normal login in the unchanged standalone Rockstar Launcher in the same prefix, a retry reached the FiveM menu. The live Rockstar session was handed over without a timeout or forced termination. This single successful recovery does not establish a persistent fix; [issue #7](https://github.com/EnteMods/fivem-macos/issues/7) remains open for startup reliability. The publication checks also passed 63 selected tests; this is not a full client or fresh-install acceptance run.
 
 The public upstream Windows-source reference is commit `88a413835e9d7f56633f249880a13f42297153a2`. The older native ARM64 patch queue has its own base and file pins in [config/native-port.json](config/native-port.json); do not assume both source bases are interchangeable. The separately installed official production client, content version `1257409`, remained unchanged during the recorded source-port work.
 
@@ -32,6 +32,7 @@ This restriction is a testing boundary, not a claim that a working custom server
 - [Build prerequisites and current limitations](docs/BUILDING.md)
 - [Source and official-client updates](docs/UPDATES.md)
 - [Open issues](docs/KNOWN_ISSUES.md)
+- [Isolated LAN test scope and read-only server inspection](server/README.md)
 
 The checked-in `native/client-profile/run_current.py` is tied to an existing local binding and helper artifacts. It is included as source evidence, not as a portable fresh-install launcher. A safe per-install bootstrap is still missing. There is no ready-to-use DMG or supported one-command installation in this repository.
 

@@ -10,9 +10,11 @@
 - [#6 — Complete isolated LAN multiplayer acceptance](https://github.com/EnteMods/fivem-macos/issues/6)
 - [#7 — Rockstar connection error 506 before the menu](https://github.com/EnteMods/fivem-macos/issues/7)
 
-## Current launch blocker: Rockstar 506
+## Intermittent Rockstar 506 and observed recovery
 
-After a successful local integrity preflight on 6 November, a controlled launch displayed Rockstar connection error 506 and stopped before the menu or a server join. There was no automatic login timeout. The private Cfx log confirms this error, but the accompanying Rockstar log entries are from the preceding day. An expired session, launcher/service startup condition or SDK connectivity is a hypothesis, not an established cause. The next check is a normal standalone Rockstar launch in the same prefix, followed by a controlled FiveM retry. Authentication and licensing must complete through the original supported paths.
+After a successful local integrity preflight on 6 November, a controlled launch displayed Rockstar connection error 506 and stopped before the menu or a server join. There was no automatic login timeout. The private Cfx log confirms this error, but the accompanying Rockstar log entries are from the preceding day. An expired session, launcher/service startup condition or SDK connectivity is a hypothesis, not an established cause.
+
+In a subsequent retry, the owner completed normal authentication in the unchanged standalone Rockstar Launcher in the same prefix. Its live session was handed over without terminating it, and FiveM reached a visibly rendered menu. Fresh Rockstar logs also recorded service connection, handshake, PreInit and UI startup. This is one observed recovery; repeatability and persistent session reuse remain unverified. Authentication and licensing were not modified. See [issue #7](https://github.com/EnteMods/fivem-macos/issues/7).
 
 ## Multiplayer authentication
 
