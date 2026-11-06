@@ -1,0 +1,48 @@
+diff --git a/code/client/launcher/GameCache.cpp b/code/client/launcher/GameCache.cpp
+index b807bed0e63afd538f72abe444299267fbfa6091..896431b91d3646e182d92dd8ecc026a8cdbf91cd 100644
+--- a/code/client/launcher/GameCache.cpp
++++ b/code/client/launcher/GameCache.cpp
+@@ -476,7 +476,7 @@ static constexpr std::array<uint8_t, Size> ParseHexString(const std::string_view
+ 	return retval;
+ }
+ 
+-template<int Size>
++template<size_t Size>
+ static std::string FormatHexString(const std::array<uint8_t, Size>& arr)
+ {
+ 	static const char charTable[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+diff --git a/code/client/launcher/Updater.cpp b/code/client/launcher/Updater.cpp
+index d65fe8ff5107841028d345709a1a6db71db70f2e..9a3c366bcd412a490464188ea2fbde3bdda77ceb 100644
+--- a/code/client/launcher/Updater.cpp
++++ b/code/client/launcher/Updater.cpp
+@@ -401,7 +401,7 @@ bool Updater_RunUpdate(std::initializer_list<std::string> wantedCachesList)
+ 		{
+ 			if (wantedCaches.find(cache->name) != wantedCaches.end())
+ 			{
+-				cache_ptr& localCache = localCacheFile.GetCache(cache->name);
++				cache_ptr localCache = localCacheFile.GetCache(cache->name);
+ 
+ 				if (localCache->version != cache->version)
+ 				{
+diff --git a/code/client/shared/Hooking.Patterns.h b/code/client/shared/Hooking.Patterns.h
+index e578071ed94330e68876ef82389d84616de0b7a9..8fb09631aa0b3aeb238e73ef0e2af4af9224a5a2 100644
+--- a/code/client/shared/Hooking.Patterns.h
++++ b/code/client/shared/Hooking.Patterns.h
+@@ -181,7 +181,7 @@ namespace hook
+ 	public:
+ 		template<size_t Len>
+ 		module_pattern(void* module, const char(&pattern)[Len])
+-			: pattern(module, false)
++			: hook::pattern(module, false)
+ 		{
+ 			Initialize(pattern, Len);
+ 		}
+@@ -205,7 +205,7 @@ namespace hook
+ 	public:
+ 		template<size_t Len>
+ 		range_pattern(uintptr_t begin, uintptr_t end, const char(&pattern)[Len])
+-			: pattern(begin, end, false)
++			: hook::pattern(begin, end, false)
+ 		{
+ 			Initialize(pattern, Len);
+ 		}

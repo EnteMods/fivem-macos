@@ -1,0 +1,236 @@
+diff --git a/code/client/citigame/Launcher.cpp b/code/client/citigame/Launcher.cpp
+index 8759ff9..4250b90 100644
+--- a/code/client/citigame/Launcher.cpp
++++ b/code/client/citigame/Launcher.cpp
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include "StdInc.h"
++#include <StartupPhaseTrace.h>
+ #include "LauncherInterface.h"
+ #include "Launcher.h"
+ #include "CrossLibraryInterfaces.h"
+@@ -29,6 +30,7 @@ __declspec(dllexport) void SetHooksDll(IGameSpecToHooks* dll);
+ 
+ bool LauncherInterface::PreLoadGame(void* cefSandbox)
+ {
++	CfxSourceStartupPhase("citigame.pre-load.enter");
+ 	// if we don't have adhesive, set our gamePid
+ 	static HostSharedData<CfxState> initState("CfxInitState");
+ 
+@@ -66,6 +68,7 @@ bool LauncherInterface::PreLoadGame(void* cefSandbox)
+ 
+ bool LauncherInterface::PostLoadGame(HMODULE hModule, void(**entryPoint)())
+ {
++	CfxSourceStartupPhase("citigame.post-load.enter");
+ 	static HostSharedData<UpdaterUIState> uuiState("CfxUUIState");
+ 
+ 	uuiState->SetText(1, "Analyzing game data");
+@@ -76,29 +79,67 @@ bool LauncherInterface::PostLoadGame(HMODULE hModule, void(**entryPoint)())
+ 
+ 	{
+ 		DisableToolHelpScope scope;
++		CfxSourceStartupPhase("citigame.do-game-load.before");
+ 		ComponentLoader::GetInstance()->DoGameLoad(hModule);
++		CfxSourceStartupPhase("citigame.do-game-load.after");
+ 	}
+ 
++	CfxSourceStartupPhase("citigame.launcher-init-functions.before");
+ 	InitFunctionBase::RunAll();
++	CfxSourceStartupPhase("citigame.launcher-init-functions.after");
+ 
+ 	return continueRunning;
+ }
+ 
+ bool LauncherInterface::PreResumeGame()
+ {
++	CfxSourceStartupPhase("citigame.pre-resume.enter");
++#ifdef CFX_SOURCE_STARTUP_DIAGNOSTICS
++	unsigned long componentIndex = 0;
++	ComponentLoader::GetInstance()->ForAllComponents([&](fwRefContainer<ComponentData> componentData)
++	{
++		CfxSourceStartupPhase("citigame.pre-resume.component.enter", ++componentIndex);
++		const auto savedError = GetLastError();
++		const auto componentName = componentData->GetName();
++		SetLastError(savedError);
++		CfxSourceStartupComponentPhase("citigame.pre-resume.component.before", componentName.c_str());
++		auto& instances = componentData->GetInstances();
++
++		if (instances.size())
++		{
++			auto& component = instances[0];
++			CfxSourceStartupComponentPhase("citigame.pre-resume.cast.before", componentName.c_str());
++			auto lifeCycle = dynamic_component_cast<LifeCycleComponent*>(component.GetRef());
++			CfxSourceStartupComponentPhase("citigame.pre-resume.cast.after", componentName.c_str());
++
++			if (lifeCycle)
++			{
++				CfxSourceStartupComponentPhase("citigame.pre-resume.callback.before", componentName.c_str());
++				lifeCycle->PreResumeGame();
++				CfxSourceStartupComponentPhase("citigame.pre-resume.callback.after", componentName.c_str());
++			}
++		}
++		CfxSourceStartupComponentPhase("citigame.pre-resume.component.after", componentName.c_str());
++	});
++#else
+ 	RunLifeCycleCallback([] (LifeCycleComponent* component)
+ 	{
+ 		component->PreResumeGame();
+ 	});
+-
++#endif
++	CfxSourceStartupPhase("citigame.pre-resume.callbacks.after");
++	CfxSourceStartupPhase("citigame.pre-resume.host-shared.before");
+ 	static HostSharedData<UpdaterUIState> uuiState("CfxUUIState");
++	CfxSourceStartupPhase("citigame.pre-resume.host-shared.after");
+ 	uuiState->Close();
++	CfxSourceStartupPhase("citigame.pre-resume.ui-closed");
+ 
+ 	return true;
+ }
+ 
+ bool LauncherInterface::PreInitializeGame()
+ {
++	CfxSourceStartupPhase("citigame.pre-initialize.enter");
+ 	std::thread([]()
+ 	{
+ 		DisableNvCache();
+@@ -106,7 +147,9 @@ bool LauncherInterface::PreInitializeGame()
+ 	.detach();
+ 
+ 	// make the component loader initialize
++	CfxSourceStartupPhase("citigame.component-loader.before");
+ 	ComponentLoader::GetInstance()->Initialize();
++	CfxSourceStartupPhase("citigame.component-loader.after");
+ 
+ 	// run callbacks on the component loader
+     if (!getenv("CitizenFX_ToolMode"))
+@@ -119,6 +162,7 @@ bool LauncherInterface::PreInitializeGame()
+         });
+     }
+ 
++	CfxSourceStartupPhase("citigame.pre-initialize.return", 1);
+ 	return true;
+ }
+ 
+diff --git a/code/client/launcher/Main.cpp b/code/client/launcher/Main.cpp
+index 37f4be0..04ed341 100644
+--- a/code/client/launcher/Main.cpp
++++ b/code/client/launcher/Main.cpp
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include "StdInc.h"
++#include <StartupPhaseTrace.h>
+ #include "CitizenGame.h"
+ 
+ // *NASTY* include path
+@@ -129,6 +130,7 @@ void DLLError(DWORD errorCode, std::string_view dllName)
+ 
+ int RealMain()
+ {
++	CfxSourceStartupPhase("main.real.enter");
+ #ifdef LAUNCHER_PERSONALITY_MAIN
+ 	// block problematic DLLs as early as possible, before any D3D/UI initialization
+ 	EarlyLdrBlock_Init();
+@@ -787,6 +789,7 @@ int RealMain()
+ 	std::wstring gameExecutable = MakeRelativeGamePath(GAME_EXECUTABLE);
+ 
+ #if defined(GTA_FIVE) || defined(IS_RDR3)
++	CfxSourceStartupPhase("main.executable-preload.before");
+ 	if (!ExecutablePreload_Init())
+ 	{
+ 		return 0;
+@@ -796,7 +799,9 @@ int RealMain()
+ #if (defined(GTA_FIVE) || defined(IS_RDR3) || defined(GTA_NY)) && (defined(LAUNCHER_PERSONALITY_GAME) || defined(LAUNCHER_PERSONALITY_MAIN))
+ 	{
+ 		// ensure game cache is up-to-date, and obtain redirection metadata from the game cache
++		CfxSourceStartupPhase("main.game-cache.before");
+ 		auto redirectionData = UpdateGameCache();
++		CfxSourceStartupPhase("main.game-cache.after", static_cast<unsigned long>(redirectionData.size()));
+ 
+ 		if (redirectionData.empty())
+ 		{
+@@ -1028,7 +1033,9 @@ int RealMain()
+ 
+ 					if (gameProc)
+ 					{
++						CfxSourceStartupPhase("main.early-mode.before");
+ 						gameProc();
++						CfxSourceStartupPhase("main.early-mode.after");
+ 					}
+ 				}
+ 				else
+@@ -1042,7 +1049,9 @@ int RealMain()
+ #endif
+ 
+ 			// game launcher initialization
++			CfxSourceStartupPhase("main.citizen-launch.before");
+ 			CitizenGame::Launch(gameExecutable);
++			CfxSourceStartupPhase("main.citizen-launch.after");
+ 		}
+ #ifdef IS_LAUNCHER
+ 		// it's not, is this the first process running?
+@@ -1124,12 +1133,16 @@ int RealMain()
+ 
+ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+ {
+-	return RealMain();
++	const auto result = RealMain();
++	CfxSourceStartupPhase("main.entry.return", static_cast<unsigned long>(result));
++	return result;
+ }
+ 
+ int main()
+ {
+-	return RealMain();
++	const auto result = RealMain();
++	CfxSourceStartupPhase("main.entry.return", static_cast<unsigned long>(result));
++	return result;
+ }
+ 
+ extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
+diff --git a/code/client/shared/StartupPhaseTrace.h b/code/client/shared/StartupPhaseTrace.h
+new file mode 100644
+index 0000000..ca75693
+--- /dev/null
++++ b/code/client/shared/StartupPhaseTrace.h
+@@ -0,0 +1,38 @@
++#pragma once
++
++#include <windows.h>
++#include <cstdio>
++
++inline void CfxSourceStartupPhase(const char* phase, unsigned long value = 0)
++{
++#ifdef CFX_SOURCE_STARTUP_DIAGNOSTICS
++    const auto savedError = GetLastError();
++    char line[256];
++    std::snprintf(line, sizeof(line), "[CFX_SOURCE_PHASE] pid=%lu tid=%lu phase=%s value=%lu\n",
++                  GetCurrentProcessId(), GetCurrentThreadId(), phase, value);
++    OutputDebugStringA(line);
++    SetLastError(savedError);
++#endif
++}
++
++inline void CfxSourceStartupComponentPhase(const char* phase, const char* component)
++{
++#ifdef CFX_SOURCE_STARTUP_DIAGNOSTICS
++    const auto savedError = GetLastError();
++    char name[97];
++    size_t length = 0;
++    for (; length < sizeof(name) - 1 && component[length]; ++length)
++    {
++        const auto value = static_cast<unsigned char>(component[length]);
++        const bool allowed = (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z') ||
++                             (value >= '0' && value <= '9') || value == '_' || value == ':' || value == '-' || value == '.';
++        name[length] = allowed ? static_cast<char>(value) : '_';
++    }
++    name[length] = '\0';
++    char line[384];
++    std::snprintf(line, sizeof(line), "[CFX_SOURCE_COMPONENT] pid=%lu tid=%lu phase=%s component=%s\n",
++                  GetCurrentProcessId(), GetCurrentThreadId(), phase, name);
++    OutputDebugStringA(line);
++    SetLastError(savedError);
++#endif
++}

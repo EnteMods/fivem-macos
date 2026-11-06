@@ -1,21 +1,54 @@
-MIT License
+FiveM macOS — No Sale License 1.0
 
 Copyright (c) 2026 Linus Schröder
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Scope
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This license applies only to original, independently authored contributions to
+this project whose rights are held by the project copyright holder, beginning
+with the source publication containing this license (the "Covered Software").
+It does not relicense upstream or third-party code, derivative upstream patches,
+or material carrying another applicable license. Those materials remain governed
+by their own terms as described in THIRD_PARTY_NOTICES.md. Where an applicable
+upstream license requires different terms, those terms take precedence and this
+license imposes no additional restriction on that upstream material.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+2. Permission
+
+Subject to these conditions, permission is granted to use, copy, study, modify,
+compile, and redistribute the Covered Software and derivative versions, in source
+or binary form. Personal and business use without resale are permitted.
+Redistribution must be free of charge and must retain this license and the
+applicable copyright, attribution, and third-party notices.
+
+3. No sale
+
+You may not sell, rent, commercially sublicense, or require payment for access
+to copies of the Covered Software or derivative versions, whether in source or
+binary form. This prohibition also applies when those copies are renamed,
+modified, or included in a paid bundle. You may not grant a recipient a right
+to sell the Covered Software that this license does not grant.
+
+This restriction concerns sale of, or paid access to, the Covered Software.
+It does not impose restrictions on separately licensed upstream software or
+on unrelated products, content, or services.
+
+4. Earlier releases
+
+This license does not revoke any rights granted for material previously
+published under another license. In particular, the original repository commit
+6cfd079232f58d8cdbd956c4db87d22e0d2ad240 remains available under its MIT license.
+That historical license is retained in LICENSES/INITIAL-MIT.txt.
+
+5. Disclaimer
+
+THE COVERED SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE COVERED SOFTWARE OR
+ITS USE, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+
+This is a project-specific source-available license, not an OSI-approved
+open-source license. No Rockstar Games, Cfx.re, game-content, SDK, service-access,
+or trademark rights are granted by this license.

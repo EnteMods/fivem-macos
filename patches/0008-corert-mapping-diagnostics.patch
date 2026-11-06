@@ -1,0 +1,118 @@
+diff --git a/code/client/citicore/FileMapping.Win32.cpp b/code/client/citicore/FileMapping.Win32.cpp
+index ce9406eac150e0db4b9e2d63a26a82dd1967c8d0..e08475a8c752851c31148eb074d0324e270b656b 100644
+--- a/code/client/citicore/FileMapping.Win32.cpp
++++ b/code/client/citicore/FileMapping.Win32.cpp
+@@ -10,6 +10,7 @@
+ #ifndef IS_FXSERVER
+ #include <jitasm.h>
+ #include "Hooking.Aux.h"
++#include "MappingDiagnostics.h"
+ #include <minhook.h>
+ 
+ #include <ROSSuffix.h>
+@@ -97,6 +98,7 @@ static std::vector<std::wstring> g_socialClubDlls = ([]
+ 
+ static std::wstring MapRedirectedFilename(const wchar_t* origFileName)
+ {
++	cfx::compat::TraceSocialClubMapping("map.enter", origFileName, {}, g_mappingFunction != nullptr);
+ 	//trace("map %s\n", ToNarrow(origFileName));
+ 
+ 	if (wcsstr(origFileName, L"title.rgl") != nullptr)
+@@ -244,10 +246,12 @@ static std::wstring MapRedirectedFilename(const wchar_t* origFileName)
+ 		}
+ 	}
+ 
++	cfx::compat::TraceSocialClubMapping("provider.before", origFileName, {}, g_mappingFunction != nullptr, true);
+ 	wchar_t* fileName = g_mappingFunction(origFileName, malloc);
+ 
+ 	std::wstring retval(fileName);
+ 	free(fileName);
++	cfx::compat::TraceSocialClubMapping("provider.after", origFileName, retval, g_mappingFunction != nullptr, true);
+ 
+ 	return retval;
+ }
+@@ -567,12 +571,15 @@ NTSTATUS NTAPI LdrLoadDllStub(const wchar_t* fileName, uint32_t* flags, UNICODE_
+ {
+ 	UNICODE_STRING newString;
+ 	std::wstring moduleNameStr(moduleName->Buffer, moduleName->Length / sizeof(wchar_t));
++	cfx::compat::TraceSocialClubMapping("ldr.enter", moduleNameStr, {}, g_mappingFunction != nullptr);
+ 
+ 	if (moduleNameStr.find(L"socialclub.dll") != std::string::npos ||
+ 		// check .exe files as well for Wine GetFileVersionInfo* calls
+ 		moduleNameStr.find(L".exe") != std::string::npos)
+ 	{
+ 		moduleNameStr = MapRedirectedFilename(moduleNameStr.c_str());
++		cfx::compat::TraceSocialClubMapping("ldr.mapped",
++			std::wstring_view(moduleName->Buffer, moduleName->Length / sizeof(wchar_t)), moduleNameStr, g_mappingFunction != nullptr);
+ 
+ 		RtlInitUnicodeString(&newString, moduleNameStr.c_str());
+ 
+@@ -1265,6 +1272,7 @@ static void WINAPI CoUninitializeStub()
+ 
+ extern "C" DLL_EXPORT void CoreSetMappingFunction(MappingFunctionType function)
+ {
++	cfx::compat::TraceMappingProvider("setup.enter", function != nullptr);
+ 	DisableToolHelpScope scope;
+ 
+ 	{
+@@ -1279,6 +1287,7 @@ extern "C" DLL_EXPORT void CoreSetMappingFunction(MappingFunctionType function)
+ 	}
+ 
+ 	g_mappingFunction = function;
++	cfx::compat::TraceMappingProvider("provider.assigned", g_mappingFunction != nullptr);
+ 	g_tlsHandle = TlsAlloc();
+ 
+ 	LSP_InitializeHooks();
+@@ -1307,5 +1316,6 @@ extern "C" DLL_EXPORT void CoreSetMappingFunction(MappingFunctionType function)
+ 
+ 	static auto _LdrRegisterDllNotification = (decltype(&LdrRegisterDllNotification))GetProcAddress(GetModuleHandle(L"ntdll.dll"), "LdrRegisterDllNotification");
+ 	_LdrRegisterDllNotification(0, LdrDllNotification, nullptr, &g_lastDllNotif);
++	cfx::compat::TraceMappingProvider("setup.complete", g_mappingFunction != nullptr);
+ }
+ #endif
+diff --git a/code/client/citicore/MappingDiagnostics.h b/code/client/citicore/MappingDiagnostics.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..403a43e19d38a6619f84375a7f9548a6324da605
+--- /dev/null
++++ b/code/client/citicore/MappingDiagnostics.h
+@@ -0,0 +1,40 @@
++#pragma once
++
++#include <windows.h>
++#include <cstdio>
++#include <string_view>
++
++namespace cfx::compat
++{
++inline void TraceMappingProvider(const char* phase, bool registered, bool called = false, bool changed = false)
++{
++#ifdef CFX_CORE_MAPPING_DIAGNOSTICS
++    const auto savedError = GetLastError();
++    char line[256];
++    std::snprintf(line, sizeof(line),
++                  "[CFX_MAPPING] pid=%lu phase=%s provider_set=%u provider_called=%u return_changed=%u\n",
++                  GetCurrentProcessId(), phase, static_cast<unsigned>(registered),
++                  static_cast<unsigned>(called), static_cast<unsigned>(changed));
++    OutputDebugStringA(line);
++    SetLastError(savedError);
++#endif
++}
++
++inline void TraceSocialClubMapping(const char* phase, std::wstring_view requested, std::wstring_view returned,
++                                  bool registered, bool called = false)
++{
++#ifdef CFX_CORE_MAPPING_DIAGNOSTICS
++    constexpr std::wstring_view filename = L"socialclub.dll";
++    const auto separator = requested.find_last_of(L"\\/");
++    const auto basename = requested.substr(separator == std::wstring_view::npos ? 0 : separator + 1);
++    if (basename.size() != filename.size()) return;
++    for (size_t index = 0; index < filename.size(); ++index)
++    {
++        auto character = basename[index];
++        if (character >= L'A' && character <= L'Z') character += L'a' - L'A';
++        if (character != filename[index]) return;
++    }
++    TraceMappingProvider(phase, registered, called, !returned.empty() && returned != requested);
++#endif
++}
++}

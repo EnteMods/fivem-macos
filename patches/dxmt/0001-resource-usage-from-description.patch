@@ -1,0 +1,31 @@
+--- a/src/d3d11/d3d11_resource.hpp
++++ b/src/d3d11/d3d11_resource.hpp
+@@ -294,7 +294,27 @@
+     if (!pUsage) {
+       return E_INVALIDARG;
+     }
+-    *pUsage = 0;
++    DXGI_USAGE usage = 0;
++    switch (desc.Usage) {
++    case D3D11_USAGE_DYNAMIC:
++      usage |= DXGI_CPU_ACCESS_DYNAMIC;
++      break;
++    case D3D11_USAGE_STAGING:
++      usage |= DXGI_CPU_ACCESS_READ_WRITE;
++      break;
++    default:
++      break;
++    }
++    if (desc.BindFlags & (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_CONSTANT_BUFFER))
++      usage |= DXGI_USAGE_SHADER_INPUT;
++    if (desc.BindFlags & D3D11_BIND_RENDER_TARGET)
++      usage |= DXGI_USAGE_RENDER_TARGET_OUTPUT;
++    if (desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS)
++      usage |= DXGI_USAGE_UNORDERED_ACCESS;
++    if (desc.MiscFlags & (D3D11_RESOURCE_MISC_SHARED | D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX |
++                          D3D11_RESOURCE_MISC_SHARED_NTHANDLE))
++      usage |= DXGI_USAGE_SHARED;
++    *pUsage = usage;
+     return S_OK;
+   }
+ 

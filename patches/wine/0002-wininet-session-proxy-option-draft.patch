@@ -1,0 +1,43 @@
+--- a/dlls/wininet/internet.c
++++ b/dlls/wininet/internet.c
+@@ -1246,6 +1246,40 @@
+     appinfo_t *ai = (appinfo_t*)hdr;
+ 
+     switch(option) {
++    case INTERNET_OPTION_PROXY:
++    {
++        const INTERNET_PROXY_INFOW *info = buf;
++        WCHAR *proxy = NULL, *bypass = NULL;
++        DWORD access_type;
++
++        if (!info || size < sizeof(*info)) return ERROR_INVALID_PARAMETER;
++        access_type = info->dwAccessType;
++
++        switch (access_type)
++        {
++        case INTERNET_OPEN_TYPE_DIRECT:
++            break;
++        case INTERNET_OPEN_TYPE_PROXY:
++            if (!info->lpszProxy || !info->lpszProxy[0]) return ERROR_INVALID_PARAMETER;
++            if (!(proxy = wcsdup(info->lpszProxy))) return ERROR_OUTOFMEMORY;
++            if (info->lpszProxyBypass && !(bypass = wcsdup(info->lpszProxyBypass)))
++            {
++                free(proxy);
++                return ERROR_OUTOFMEMORY;
++            }
++            break;
++        default:
++            return ERROR_INTERNET_INVALID_OPTION;
++        }
++
++        /* Prepare both owned strings before replacing possibly aliased input. */
++        free(ai->proxy);
++        free(ai->proxyBypass);
++        ai->proxy = proxy;
++        ai->proxyBypass = bypass;
++        ai->accessType = access_type;
++        return ERROR_SUCCESS;
++    }
+     case INTERNET_OPTION_USER_AGENT:
+         free(ai->agent);
+         if (!(ai->agent = wcsdup(buf))) return ERROR_OUTOFMEMORY;

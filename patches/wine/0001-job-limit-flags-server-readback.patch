@@ -1,0 +1,61 @@
+--- a/dlls/ntdll/unix/sync.c
++++ b/dlls/ntdll/unix/sync.c
+@@ -1700,22 +1700,25 @@
+         return count < process->NumberOfAssignedProcesses ? STATUS_MORE_ENTRIES : STATUS_SUCCESS;
+     }
+     case JobObjectExtendedLimitInformation:
+-    {
+-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION *extended_limit = info;
+-
+-        if (len < sizeof(*extended_limit)) return STATUS_INFO_LENGTH_MISMATCH;
+-        memset( extended_limit, 0, sizeof(*extended_limit) );
+-        if (ret_len) *ret_len = sizeof(*extended_limit);
+-        return STATUS_SUCCESS;
+-    }
+     case JobObjectBasicLimitInformation:
+     {
+         JOBOBJECT_BASIC_LIMIT_INFORMATION *basic_limit = info;
+-
+-        if (len < sizeof(*basic_limit)) return STATUS_INFO_LENGTH_MISMATCH;
+-        memset( basic_limit, 0, sizeof(*basic_limit) );
+-        if (ret_len) *ret_len = sizeof(*basic_limit);
+-        return STATUS_SUCCESS;
++        ULONG size = class == JobObjectExtendedLimitInformation
++            ? sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION) : sizeof(*basic_limit);
++
++        if (len < size) return STATUS_INFO_LENGTH_MISMATCH;
++        SERVER_START_REQ( get_job_info )
++        {
++            req->handle = wine_server_obj_handle( handle );
++            if (!(ret = wine_server_call( req )))
++            {
++                memset( info, 0, size );
++                basic_limit->LimitFlags = reply->limit_flags;
++            }
++        }
++        SERVER_END_REQ;
++        if (!ret && ret_len) *ret_len = size;
++        return ret;
+     }
+     default:
+         return STATUS_NOT_IMPLEMENTED;
+--- a/server/process.c
++++ b/server/process.c
+@@ -2112,6 +2112,7 @@
+ 
+     reply->total_processes = job->total_processes;
+     reply->active_processes = job->num_processes;
++    reply->limit_flags = job->limit_flags;
+ 
+     len = min( get_reply_max_size(), reply->active_processes * sizeof(*pids) );
+     if (len && ((pids = set_reply_data_size( len ))))
+--- a/server/protocol.def
++++ b/server/protocol.def
+@@ -4102,6 +4102,7 @@
+ @REPLY
+     int total_processes;          /* total count of processes */
+     int active_processes;         /* count of running processes */
++    unsigned int limit_flags;     /* current job limit flags */
+     VARARG(pids,uints);           /* list of active pids */
+ @END
+ 

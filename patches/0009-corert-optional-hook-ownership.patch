@@ -1,0 +1,56 @@
+--- a/code/client/citicore/DllGameComponent.Win32.cpp
++++ b/code/client/citicore/DllGameComponent.Win32.cpp
+@@ -50,22 +50,34 @@
+ 		DisableToolHelpScope thScope;
+ 
+ 		MH_Initialize();
+-		MH_CreateHook(m_target, RtlRaiseExceptionStub, (void**)&g_origRtlRaiseException);
+-		MH_EnableHook(m_target);
+-
+-		MH_CreateHook(m_target2, ZwQueryDebugFilterStateStub, (void**)&g_origZwQueryDebugFilterState);
+-		MH_EnableHook(m_target2);
++		m_ownsTarget = m_target && MH_CreateHook(m_target, RtlRaiseExceptionStub, (void**)&g_origRtlRaiseException) == MH_OK;
++		if (m_ownsTarget)
++		{
++			MH_EnableHook(m_target);
++		}
++
++		m_ownsTarget2 = m_target2 && MH_CreateHook(m_target2, ZwQueryDebugFilterStateStub, (void**)&g_origZwQueryDebugFilterState) == MH_OK;
++		if (m_ownsTarget2)
++		{
++			MH_EnableHook(m_target2);
++		}
+ 	}
+ 
+ 	~HardErrorScope()
+ 	{
+ 		DisableToolHelpScope thScope;
+ 
+-		MH_DisableHook(m_target);
+-		MH_RemoveHook(m_target);
+-
+-		MH_DisableHook(m_target2);
+-		MH_RemoveHook(m_target2);
++		if (m_ownsTarget)
++		{
++			MH_DisableHook(m_target);
++			MH_RemoveHook(m_target);
++		}
++
++		if (m_ownsTarget2)
++		{
++			MH_DisableHook(m_target2);
++			MH_RemoveHook(m_target2);
++		}
+ 
+ 		if (m_oldLdrFlags)
+ 		{
+@@ -82,6 +94,8 @@
+ private:
+ 	void* m_target;
+ 	void* m_target2;
++	bool m_ownsTarget = false;
++	bool m_ownsTarget2 = false;
+ 	std::optional<int> m_oldLdrFlags;
+ 
+ 	static BOOL NTAPI ZwQueryDebugFilterStateStub(_In_ ULONG ComponentId, _In_ ULONG Level)

@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.20)
+project(CfxMainCodecBuild LANGUAGES C)
+set(CFX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../port/fivem" CACHE PATH "Isolated pinned FiveM source")
+get_filename_component(CFX_SOURCE_DIR "${CFX_SOURCE_DIR}" ABSOLUTE)
+string(REPLACE "[" "[[]" CFX_GLOB_ROOT "${CFX_SOURCE_DIR}")
+add_library(cfx_main_options INTERFACE)
+target_compile_definitions(cfx_main_options INTERFACE
+  UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _WIN32_WINNT=0x0A00 WINVER=0x0A00)
+include("${CMAKE_CURRENT_SOURCE_DIR}/../windows-client/vendor-codecs.cmake")
+add_executable(MainCodecLinkProbe link_probe.c)
+target_compile_definitions(MainCodecLinkProbe PRIVATE LZMA_API_STATIC)
+target_link_libraries(MainCodecLinkProbe PRIVATE cfx_main_codecs)
+set_target_properties(MainCodecLinkProbe PROPERTIES MSVC_RUNTIME_LIBRARY MultiThreaded)
+foreach(target ${mainCodecTargets})
+  target_link_options(MainCodecLinkProbe PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:${target}>")
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/codec-artifacts.json" CONTENT
+  "{\"xz\":\"$<TARGET_FILE:cfx_main_xz>\",\"zstd\":\"$<TARGET_FILE:cfx_main_zstd>\",\"zlib\":\"$<TARGET_FILE:cfx_main_zlib>\",\"minizip\":\"$<TARGET_FILE:cfx_main_minizip>\",\"hdiffpatch\":\"$<TARGET_FILE:cfx_main_hdiffpatch>\",\"wholeArchiveLinkProbe\":\"$<TARGET_FILE:MainCodecLinkProbe>\"}\n")

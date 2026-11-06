@@ -1,0 +1,420 @@
+diff --git a/code/client/citicore/DllGameComponent.Win32.cpp b/code/client/citicore/DllGameComponent.Win32.cpp
+index f6a52e5..8446ce5 100644
+--- a/code/client/citicore/DllGameComponent.Win32.cpp
++++ b/code/client/citicore/DllGameComponent.Win32.cpp
+@@ -9,6 +9,8 @@
+ #include "DllGameComponent.h"
+ 
+ #include <Error.h>
++#include "LaunchMode.h"
++#include "LoaderDiagnostics.h"
+ 
+ #include <winternl.h>
+ #include <ntstatus.h>
+@@ -37,7 +39,7 @@ struct HardErrorScope
+ 
+ 		// 19H1, Vb and Mn seem to adhere to this memory layout.
+ 		// Not sure about Fe and above, so taking out 20000.
+-		if (osBuildNumber >= 18362 && osBuildNumber < 19628)
++		if (cfx::compat::HasWindowsLoaderSnapsLayout(osBuildNumber, CfxIsWine()))
+ 		{
+ 			auto fltUsed = (char*)GetProcAddress(GetModuleHandle(L"ntdll.dll"), "_fltused");
+ 			m_oldLdrFlags = *(int*)(fltUsed - 16);
+diff --git a/code/client/citicore/LoaderDiagnostics.h b/code/client/citicore/LoaderDiagnostics.h
+new file mode 100644
+index 0000000..669d7e2
+--- /dev/null
++++ b/code/client/citicore/LoaderDiagnostics.h
+@@ -0,0 +1,14 @@
++/*
++ * This file is part of the Cfx project - https://cfx.re/
++ * See LICENSE in the root of the source tree for licensing information.
++ */
++#pragma once
++
++namespace cfx::compat
++{
++inline constexpr bool HasWindowsLoaderSnapsLayout(unsigned short build, bool isWine)
++{
++    // The flag preceding Windows' _fltused export is not a Wine ABI.
++    return !isWine && build >= 18362 && build < 19628;
++}
++}
+diff --git a/code/client/citicore/SEHTableHandler.Win32.cpp b/code/client/citicore/SEHTableHandler.Win32.cpp
+index d413b35..58b6e6f 100644
+--- a/code/client/citicore/SEHTableHandler.Win32.cpp
++++ b/code/client/citicore/SEHTableHandler.Win32.cpp
+@@ -11,6 +11,8 @@
+ #include "Hooking.Aux.h"
+ 
+ #include <Error.h>
++#include "LaunchMode.h"
++#include "WineExceptionFilter.h"
+ 
+ #include <udis86.h>
+ 
+@@ -83,6 +85,8 @@ static void* FindCallFromAddress(void* methodPtr, ud_mnemonic_code mnemonic = UD
+ }
+ 
+ #ifdef _M_AMD64
++#include "WineFunctionTable.h"
++
+ struct FUNCTION_TABLE_DATA
+ {
+ 	DWORD64 TableAddress;
+@@ -168,6 +172,26 @@ extern "C" void DLL_EXPORT CoreRT_SetupSEHHandler(void* moduleBase, void* module
+ 	g_overriddenTable.TableAddress = (DWORD64)runtimeFunctions;
+ 	g_overriddenTable.Size = entryCount * sizeof(RUNTIME_FUNCTION);
+ 
++	if (CfxIsWine())
++	{
++		DisableToolHelpScope scope;
++		const auto status = cfx::compat::InstallWineFunctionTable(
++			(DWORD64)moduleBase, (DWORD64)moduleEnd, runtimeFunctions, entryCount);
++		if (status != MH_OK)
++		{
++			const auto& diagnostic = cfx::compat::g_wineFunctionTableDiagnostic;
++			FatalError("Could not install Wine function table handler: %d\n"
++				"phase=%s range=%llx..%llx span=%llx entries=%u original-bytes=%u\n"
++				"offending-index=%u entry=%x..%x unwind=%x reserve-skipped=%u",
++				(int)status, diagnostic.phase, diagnostic.begin, diagnostic.end,
++				diagnostic.end - diagnostic.begin, diagnostic.entryCount, diagnostic.originalSize,
++				diagnostic.offendingIndex, diagnostic.offendingEntry.BeginAddress,
++				diagnostic.offendingEntry.EndAddress, diagnostic.offendingEntry.UnwindData,
++				diagnostic.inertReserveEntriesSkipped);
++		}
++		return;
++	}
++
+ 	if (IsWindows8Point1OrGreater())
+ 	{
+ 		auto ZwQueryVirtualMemory = (NTSTATUS(NTAPI*)(HANDLE, PVOID, INT, PVOID, SIZE_T, PSIZE_T))GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtQueryVirtualMemory");
+@@ -465,6 +489,12 @@ extern "C" void DLL_EXPORT CoreSetExceptionOverride(LONG (*handler)(EXCEPTION_PO
+ 
+ 	g_exceptionHandler = handler;
+ 
++	if (CfxIsWine())
++	{
++		cfx::compat::InstallWineExceptionFilter(handler);
++		return;
++	}
++
+ 	void* baseAddress = GetProcAddress(GetModuleHandle(L"ntdll.dll"), "KiUserExceptionDispatcher");
+ 
+ 	if (baseAddress)
+diff --git a/code/client/citicore/WineExceptionFilter.h b/code/client/citicore/WineExceptionFilter.h
+new file mode 100644
+index 0000000..61b2f59
+--- /dev/null
++++ b/code/client/citicore/WineExceptionFilter.h
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of the Cfx project - https://cfx.re/
++ * See LICENSE in the root of the source tree for licensing information.
++ */
++#pragma once
++
++#include <windows.h>
++#include <atomic>
++#include <mutex>
++
++namespace cfx::compat
++{
++using ExceptionReporter = LONG (*)(EXCEPTION_POINTERS*);
++inline std::atomic<ExceptionReporter> g_wineExceptionReporter{nullptr};
++inline std::atomic<LPTOP_LEVEL_EXCEPTION_FILTER> g_previousWineExceptionFilter{nullptr};
++inline std::once_flag g_wineExceptionFilterOnce;
++
++inline LONG WINAPI ReportWineUnhandledException(EXCEPTION_POINTERS* exception)
++{
++    if (auto reporter = g_wineExceptionReporter.load(std::memory_order_acquire))
++    {
++        const auto result = reporter(exception);
++        if (result != EXCEPTION_CONTINUE_SEARCH)
++        {
++            return result;
++        }
++    }
++    if (auto previous = g_previousWineExceptionFilter.load(std::memory_order_acquire))
++    {
++        return previous(exception);
++    }
++    return EXCEPTION_CONTINUE_SEARCH;
++}
++
++inline void InstallWineExceptionFilter(ExceptionReporter reporter)
++{
++    g_wineExceptionReporter.store(reporter, std::memory_order_release);
++    std::call_once(g_wineExceptionFilterOnce, []
++    {
++        g_previousWineExceptionFilter.store(SetUnhandledExceptionFilter(ReportWineUnhandledException),
++                                           std::memory_order_release);
++    });
++}
++}
+diff --git a/code/client/citicore/WineFunctionTable.h b/code/client/citicore/WineFunctionTable.h
+new file mode 100644
+index 0000000..567d452
+--- /dev/null
++++ b/code/client/citicore/WineFunctionTable.h
+@@ -0,0 +1,260 @@
++/*
++ * This file is part of the Cfx project - https://cfx.re/
++ * See LICENSE in the root of the source tree for licensing information.
++ */
++#pragma once
++
++#include <windows.h>
++#include <MinHook.h>
++#include <limits>
++#include <vector>
++#include <cstring>
++
++namespace cfx::compat
++{
++// Wine exposes this three-argument ABI; its internals need not match Windows.
++using WineLookupFunctionTable = PRUNTIME_FUNCTION (WINAPI*)(DWORD64, PDWORD64, PULONG);
++using WineImageDirectory = PVOID (WINAPI*)(HMODULE, BOOL, WORD, PULONG);
++
++struct WineFunctionTableState
++{
++    DWORD64 begin = 0;
++    DWORD64 end = 0;
++    PRUNTIME_FUNCTION table = nullptr;
++    ULONG size = 0;
++    WineImageDirectory original = nullptr;
++    LPVOID target = nullptr;
++    PRUNTIME_FUNCTION sourceTable = nullptr;
++    ULONG sourceSize = 0;
++    std::vector<RUNTIME_FUNCTION> combined;
++};
++
++inline WineFunctionTableState g_wineFunctionTable;
++
++struct WineFunctionTableDiagnostic
++{
++    const char* phase = "not-started";
++    DWORD64 begin = 0;
++    DWORD64 end = 0;
++    DWORD entryCount = 0;
++    ULONG originalSize = 0;
++    ULONG offendingIndex = (std::numeric_limits<ULONG>::max)();
++    RUNTIME_FUNCTION offendingEntry{};
++    ULONG inertReserveEntriesSkipped = 0;
++    MH_STATUS status = MH_OK;
++};
++
++inline WineFunctionTableDiagnostic g_wineFunctionTableDiagnostic;
++
++struct WineInertReserve
++{
++    DWORD begin;
++    DWORD end;
++};
++
++inline std::vector<WineInertReserve> GetWineInertHostReserves(DWORD64 base)
++{
++    // Setup runs before the mapped image's headers replace the host headers.
++    using ImageNtHeader = PIMAGE_NT_HEADERS (WINAPI*)(PVOID);
++    auto imageNtHeader = reinterpret_cast<ImageNtHeader>(GetProcAddress(
++        GetModuleHandleW(L"ntdll.dll"), "RtlImageNtHeader"));
++    auto header = imageNtHeader ? imageNtHeader(reinterpret_cast<PVOID>(base)) : nullptr;
++    std::vector<WineInertReserve> result;
++    if (!header || header->Signature != IMAGE_NT_SIGNATURE ||
++        header->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC ||
++        header->FileHeader.NumberOfSections > 256)
++    {
++        return result;
++    }
++    const auto section = IMAGE_FIRST_SECTION(header);
++    const auto sectionOffset = reinterpret_cast<const BYTE*>(section) - reinterpret_cast<const BYTE*>(base);
++    if (sectionOffset < 0 || static_cast<ULONGLONG>(sectionOffset) +
++        header->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER) > header->OptionalHeader.SizeOfHeaders)
++    {
++        return result;
++    }
++    for (WORD index = 0; index < header->FileHeader.NumberOfSections; ++index)
++    {
++        const auto& entry = section[index];
++        constexpr DWORD required = IMAGE_SCN_CNT_UNINITIALIZED_DATA | IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE;
++        constexpr DWORD forbidden = IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE | IMAGE_SCN_CNT_INITIALIZED_DATA;
++        const auto end = static_cast<ULONGLONG>(entry.VirtualAddress) + entry.Misc.VirtualSize;
++        if (std::memcmp(entry.Name, ".cdummy", 8) == 0 && entry.SizeOfRawData == 0 &&
++            (entry.Characteristics & required) == required && !(entry.Characteristics & forbidden) &&
++            entry.Misc.VirtualSize && entry.VirtualAddress >= header->OptionalHeader.SizeOfHeaders &&
++            end <= header->OptionalHeader.SizeOfImage)
++        {
++            result.push_back({entry.VirtualAddress, static_cast<DWORD>(end)});
++        }
++    }
++    return result;
++}
++
++inline bool IsWineInertHostEntry(const RUNTIME_FUNCTION& entry, const std::vector<WineInertReserve>& reserves)
++{
++    if (entry.BeginAddress >= entry.EndAddress)
++    {
++        return false;
++    }
++    for (const auto& reserve : reserves)
++    {
++        if (entry.BeginAddress >= reserve.begin && entry.EndAddress <= reserve.end)
++        {
++            return true;
++        }
++    }
++    return false;
++}
++
++inline PVOID WINAPI LookupWineImageDirectory(HMODULE module, BOOL image, WORD directory, PULONG size)
++{
++    const auto& state = g_wineFunctionTable;
++    if (reinterpret_cast<DWORD64>(module) == state.begin && image &&
++        directory == IMAGE_DIRECTORY_ENTRY_EXCEPTION)
++    {
++        *size = state.size;
++        return state.table;
++    }
++    return state.original(module, image, directory, size);
++}
++
++// Called before execution of the mapped game image. Table storage must outlive it.
++inline MH_STATUS InstallWineFunctionTable(DWORD64 begin, DWORD64 end,
++                                         PRUNTIME_FUNCTION table, DWORD entryCount)
++{
++    g_wineFunctionTableDiagnostic = {};
++    auto& diagnostic = g_wineFunctionTableDiagnostic;
++    diagnostic.begin = begin;
++    diagnostic.end = end;
++    diagnostic.entryCount = entryCount;
++    auto fail = [&diagnostic](const char* phase, MH_STATUS status,
++                              ULONG index = (std::numeric_limits<ULONG>::max)(),
++                              RUNTIME_FUNCTION entry = RUNTIME_FUNCTION{})
++    {
++        diagnostic.phase = phase;
++        diagnostic.status = status;
++        diagnostic.offendingIndex = index;
++        diagnostic.offendingEntry = entry;
++        return status;
++    };
++    if (!begin || end <= begin || !table || !entryCount || entryCount > (std::numeric_limits<ULONG>::max)() / sizeof(RUNTIME_FUNCTION))
++    {
++        return fail("input-arguments", MH_ERROR_UNSUPPORTED_FUNCTION);
++    }
++    if (g_wineFunctionTable.target)
++    {
++        const auto& state = g_wineFunctionTable;
++        if (state.begin == begin && state.end == end && state.sourceTable == table &&
++            state.sourceSize == entryCount * sizeof(RUNTIME_FUNCTION))
++        {
++            return MH_OK;
++        }
++        return fail("different-table-already-installed", MH_ERROR_ALREADY_CREATED);
++    }
++    auto target = reinterpret_cast<LPVOID>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlImageDirectoryEntryToData"));
++    if (!target)
++    {
++        return fail("wine-image-directory-export", MH_ERROR_FUNCTION_NOT_FOUND);
++    }
++    const auto span = end - begin;
++    for (DWORD index = 0; index < entryCount; ++index)
++    {
++        if (table[index].BeginAddress >= table[index].EndAddress || table[index].EndAddress > span ||
++            (index && table[index - 1].EndAddress > table[index].BeginAddress))
++        {
++            return fail("mapped-entry-order-or-bounds", MH_ERROR_UNSUPPORTED_FUNCTION, index, table[index]);
++        }
++    }
++    ULONG originalSize = 0;
++    auto original = static_cast<PRUNTIME_FUNCTION>(reinterpret_cast<WineImageDirectory>(target)(
++        reinterpret_cast<HMODULE>(begin), TRUE, IMAGE_DIRECTORY_ENTRY_EXCEPTION, &originalSize));
++    diagnostic.originalSize = originalSize;
++    if ((originalSize && !original) || originalSize % sizeof(RUNTIME_FUNCTION))
++    {
++        return fail("original-exception-directory", MH_ERROR_UNSUPPORTED_FUNCTION);
++    }
++    const auto inertReserves = GetWineInertHostReserves(begin);
++    std::vector<RUNTIME_FUNCTION> tail;
++    for (ULONG index = 0; index < originalSize / sizeof(RUNTIME_FUNCTION); ++index)
++    {
++        const auto& entry = original[index];
++        // Retargeted game entries in a non-executable BSS reserve are not host code.
++        // The incoming mapped-image table remains separately validated and untouched.
++        if (IsWineInertHostEntry(entry, inertReserves))
++        {
++            ++diagnostic.inertReserveEntriesSkipped;
++            continue;
++        }
++        // Splitting a prologue needs new chained unwind info, not a shifted BeginAddress.
++        if (entry.BeginAddress < span && entry.EndAddress > span)
++        {
++            return fail("original-executable-crosses-mapped-end", MH_ERROR_UNSUPPORTED_FUNCTION, index, entry);
++        }
++        if (entry.BeginAddress >= span)
++        {
++            tail.push_back(entry);
++        }
++    }
++    if (tail.size() > (std::numeric_limits<ULONG>::max)() / sizeof(RUNTIME_FUNCTION) - entryCount)
++    {
++        return fail("combined-table-size", MH_ERROR_UNSUPPORTED_FUNCTION);
++    }
++    auto status = MH_Initialize();
++    if (status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED)
++    {
++        return fail("minhook-initialize", status);
++    }
++    g_wineFunctionTable = {begin, end, table, entryCount * static_cast<ULONG>(sizeof(RUNTIME_FUNCTION)), nullptr, target};
++    auto& state = g_wineFunctionTable;
++    state.sourceTable = table;
++    state.sourceSize = state.size;
++    if (!tail.empty())
++    {
++        state.combined.assign(table, table + entryCount);
++        state.combined.insert(state.combined.end(), tail.begin(), tail.end());
++        state.table = state.combined.data();
++        state.size = static_cast<ULONG>(state.combined.size() * sizeof(RUNTIME_FUNCTION));
++    }
++    status = MH_CreateHook(target, reinterpret_cast<LPVOID>(&LookupWineImageDirectory),
++                           reinterpret_cast<LPVOID*>(&g_wineFunctionTable.original));
++    diagnostic.phase = "minhook-create";
++    if (status == MH_OK)
++    {
++        status = MH_EnableHook(target);
++        diagnostic.phase = "minhook-enable";
++        if (status != MH_OK)
++        {
++            MH_RemoveHook(target);
++        }
++    }
++    if (status != MH_OK)
++    {
++        g_wineFunctionTable = {};
++    }
++    diagnostic.status = status;
++    if (status == MH_OK)
++    {
++        diagnostic.phase = "installed";
++    }
++    return status;
++}
++
++inline MH_STATUS RemoveWineFunctionTable()
++{
++    auto target = g_wineFunctionTable.target;
++    if (!target)
++    {
++        return MH_ERROR_NOT_CREATED;
++    }
++    auto status = MH_DisableHook(target);
++    if (status == MH_OK)
++    {
++        status = MH_RemoveHook(target);
++    }
++    if (status == MH_OK)
++    {
++        g_wineFunctionTable = {};
++    }
++    return status;
++}
++}

@@ -1,0 +1,57 @@
+{
+  "release": "llvmorg-23.1.4",
+  "tag_object": "f2c432f21b5e6f96157b1720857b472dc487fa49",
+  "commit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5",
+  "files": [
+    {
+      "path": "compiler-rt/LICENSE.TXT",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/LICENSE.TXT",
+      "bytes": 16708,
+      "sha256": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/udivti3.c",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/udivti3.c",
+      "bytes": 699,
+      "sha256": "c0b20f06f6e0e8a6b5423ca6674cf0c57219d07554f6f35c9ecc36bf28915355"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/umodti3.c",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/umodti3.c",
+      "bytes": 717,
+      "sha256": "3d88088419d87b486858a4bf54ff08209944ae526c77b8dc5e0c0b6b8001c1e9"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/udivmodti4.c",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/udivmodti4.c",
+      "bytes": 5013,
+      "sha256": "2fb3eb297e006000935452cb34622b389c5ce39af6e1416b4a11398b78142251"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/int_lib.h",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/int_lib.h",
+      "bytes": 5146,
+      "sha256": "a5735bf1bfacecd6cf5785ed19ae62a981ff2f0923c38caa99f4af47f2be57b5"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/int_types.h",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/int_types.h",
+      "bytes": 7220,
+      "sha256": "198552b25faf8a75b077ea145591cd7f6762b7f2712321b18f5e38fee8cc2a1e"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/int_endianness.h",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/int_endianness.h",
+      "bytes": 2804,
+      "sha256": "ec5175561075845b7b16a92ad5ecdfd42a284de2736dd07e4ca7011b75c37709"
+    },
+    {
+      "path": "compiler-rt/lib/builtins/int_util.h",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/compiler-rt/lib/builtins/int_util.h",
+      "bytes": 2221,
+      "sha256": "63d06198ab720a75c20bfd84be895c2746581b129168bae6201e7384bbb0473b"
+    }
+  ],
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "scope": "Original compiler-rt unsigned 128-bit division/remainder C builtins; no replacement CRT or C++ ABI"
+}

@@ -1,0 +1,383 @@
+diff --git a/code/client/citicore/ComponentLoader.cpp b/code/client/citicore/ComponentLoader.cpp
+index 8c680b294dbc6da22e47433e165dd5a3e10cf20d..fa52e63b872ed040b0045897bf60c6bb1cf338a2 100644
+--- a/code/client/citicore/ComponentLoader.cpp
++++ b/code/client/citicore/ComponentLoader.cpp
+@@ -14,7 +14,7 @@
+ #include <LaunchMode.h>
+ #include <CrossBuildRuntime.h>
+ 
+-#ifndef IS_FXSERVER
++#if defined(_WIN32) && !defined(IS_FXSERVER)
+ #include <CL2LaunchMode.h>
+ #include <CfxState.h>
+ #endif
+@@ -22,8 +22,12 @@
+ #ifdef _WIN32
+ #define PLATFORM_LIBRARY_STRING L"%s.dll"
+ #else
++#ifdef __APPLE__
++#define PLATFORM_LIBRARY_STRING "lib%s.dylib"
++#else
+ #define PLATFORM_LIBRARY_STRING "lib%s.so"
+ #endif
++#endif
+ 
+ static bool g_initialized;
+ 
+@@ -64,6 +68,10 @@ void ComponentLoader::Initialize()
+ 
+ void ComponentLoader::InitializeWithString(std::string_view cacheBuf)
+ {
++#if defined(__APPLE__) && !defined(IS_FXSERVER)
++    FatalError("Native macOS client initialization is unavailable: required vendor security and game runtime components have not been ported.");
++    return;
++#endif
+ 	// run local initialization functions
+ 	InitFunctionBase::RunAll();
+ 
+@@ -164,7 +172,7 @@ void ComponentLoader::InitializeWithString(std::string_view cacheBuf)
+ #endif
+ #endif
+ 
+-#ifndef IS_FXSERVER
++#if defined(_WIN32) && !defined(IS_FXSERVER)
+ 		if (nameWide == L"adhesive")
+ 		{
+ 			if (launch::IsSDK() || launch::IsSDKGuest())
+diff --git a/code/client/citicore/ComponentLoader.h b/code/client/citicore/ComponentLoader.h
+index 4e9f82ad5a0a2b8ecfa341974ffa60bfc975bf82..2111639dfcb8ce1439fc568e88e85d65f5d9e013 100644
+--- a/code/client/citicore/ComponentLoader.h
++++ b/code/client/citicore/ComponentLoader.h
+@@ -12,6 +12,9 @@
+ #include <unordered_map>
+ 
+ #include <boost/type_index.hpp>
++#ifndef IS_FXSERVER
++#include "ResumeComponent.h"
++#endif
+ 
+ //
+ // An identifier for a Fx component. These are formatted like `category:subcategory:...[version]`.
+diff --git a/code/client/citicore/ResumeComponent.h b/code/client/citicore/ResumeComponent.h
+index e847a1b82d0f8aae238db37378fac4f670af6cae..b465ff0cf1b838efe7fae54aff0ae1c55f57bbc7 100644
+--- a/code/client/citicore/ResumeComponent.h
++++ b/code/client/citicore/ResumeComponent.h
+@@ -10,9 +10,13 @@ public:
+ 	virtual void HandleAbnormalTermination(void* reason) = 0;
+ };
+ 
++#ifdef _MSC_VER
+ __declspec(selectany) fwEvent<> OnResumeGame;
+-
+ __declspec(selectany) fwEvent<void*> OnAbnormalTermination;
++#else
++inline fwEvent<> OnResumeGame;
++inline fwEvent<void*> OnAbnormalTermination;
++#endif
+ 
+ template<typename TBaseComponent>
+ class LifeCycleComponentBase : public TBaseComponent, public LifeCycleComponent
+diff --git a/code/client/shared/CL2LaunchMode.h b/code/client/shared/CL2LaunchMode.h
+index 78ea54c567464e87c992b8a3e6267e120ac3f91b..9e4af937ed493a536a5c47749399fc4564bf5f39 100644
+--- a/code/client/shared/CL2LaunchMode.h
++++ b/code/client/shared/CL2LaunchMode.h
+@@ -1,11 +1,32 @@
+ #pragma once
+ 
++#ifdef __APPLE__
++#include <crt_externs.h>
++#include <cstring>
++
++inline bool CfxNativeCommandLineContains(const char* token)
++{
++    for (int i = 1; i < *_NSGetArgc(); ++i)
++    {
++        if (std::strstr((*_NSGetArgv())[i], token))
++        {
++            return true;
++        }
++    }
++    return false;
++}
++#endif
++
+ inline bool IsCL2()
+ {
+ 	static auto isCl2 = ([]()
+ 	{
+ #ifndef IS_FXSERVER
+-		if (wcsstr(GetCommandLineW(), L"cl2") != nullptr)
++		#ifdef __APPLE__
++        if (CfxNativeCommandLineContains("cl2"))
++#else
++        if (wcsstr(GetCommandLineW(), L"cl2") != nullptr)
++#endif
+ 		{
+ 			return true;
+ 		}
+@@ -23,10 +44,10 @@ inline bool IsSDKGuest()
+ {
+ 	static auto isSdkGuest = ([]()
+ 	{
+-#ifndef IS_FXSERVER
+-		if (getenv("CitizenFX_SDK_Guest"))
+-		{
+-			return true;
++#ifndef IS_FXSERVER
++		if (getenv("CitizenFX_SDK_Guest"))
++		{
++			return true;
+ 		}
+ #endif
+ 
+@@ -35,13 +56,17 @@ inline bool IsSDKGuest()
+ 
+ 	return isSdkGuest;
+ }
+-
++
+ inline bool IsFXNode()
+ {
+ 	static auto isFXNode = ([]()
+ 	{
+ #ifndef IS_FXSERVER
+-		if (wcsstr(GetCommandLineW(), L"--start-node") != nullptr)
++		#ifdef __APPLE__
++        if (CfxNativeCommandLineContains("--start-node"))
++#else
++        if (wcsstr(GetCommandLineW(), L"--start-node") != nullptr)
++#endif
+ 		{
+ 			return true;
+ 		}
+@@ -51,14 +76,18 @@ inline bool IsFXNode()
+ 	})();
+ 
+ 	return isFXNode;
+-}
++}
+ 
+ inline bool IsSDK()
+ {
+ 	static auto isSdk = ([]()
+ 	{
+ #ifndef IS_FXSERVER
+-		if (wcsstr(GetCommandLineW(), L"fxdk") != nullptr && !IsSDKGuest())
++		#ifdef __APPLE__
++        if (CfxNativeCommandLineContains("fxdk") && !IsSDKGuest())
++#else
++        if (wcsstr(GetCommandLineW(), L"fxdk") != nullptr && !IsSDKGuest())
++#endif
+ 		{
+ 			return true;
+ 		}
+diff --git a/code/client/shared/Registry.h b/code/client/shared/Registry.h
+index 655fe1a5436dcab8fa347afc4607f27285bf5c2c..3fb92b834e96dfa02aab4ab1731ca7fd8deaa740 100644
+--- a/code/client/shared/Registry.h
++++ b/code/client/shared/Registry.h
+@@ -36,6 +36,7 @@ extern "C" CORE_EXPORT ComponentRegistry* CoreGetComponentRegistry();
+ #else
+ #ifndef _WIN32
+ #include <dlfcn.h>
++#include <stdexcept>
+ #endif
+ 
+ static
+@@ -50,6 +51,12 @@ auto CoreGetComponentRegistry()
+ 		{
+ #ifdef _WIN32
+ 			auto func = (ComponentRegistry*(*)())GetProcAddress(GetModuleHandleW(L"CoreRT.dll"), "CoreGetComponentRegistry");
++#elif defined(__APPLE__)
++			auto func = (ComponentRegistry*(*)())dlsym(RTLD_DEFAULT, "CoreGetComponentRegistry");
++			if (!func)
++			{
++				throw std::runtime_error("Native CoreRT registry export is unavailable");
++			}
+ #else
+ 			auto func = (ComponentRegistry*(*)())dlsym(dlopen("./libCoreRT.so", RTLD_LAZY), "CoreGetComponentRegistry");
+ #endif
+@@ -99,6 +106,7 @@ extern "C" CORE_EXPORT InstanceRegistry* CoreGetGlobalInstanceRegistry();
+ #else
+ #ifndef _WIN32
+ #include <dlfcn.h>
++#include <stdexcept>
+ #endif
+ 
+ static
+@@ -113,6 +121,12 @@ static
+         {
+ #ifdef _WIN32
+             auto func = (InstanceRegistry*(*)())GetProcAddress(GetModuleHandleW(L"CoreRT.dll"), "CoreGetGlobalInstanceRegistry");
++#elif defined(__APPLE__)
++			auto func = (InstanceRegistry*(*)())dlsym(RTLD_DEFAULT, "CoreGetGlobalInstanceRegistry");
++			if (!func)
++			{
++				throw std::runtime_error("Native CoreRT registry export is unavailable");
++			}
+ #else
+ 			auto func = (InstanceRegistry*(*)())dlsym(dlopen("./libCoreRT.so", RTLD_LAZY), "CoreGetGlobalInstanceRegistry");
+ #endif
+diff --git a/code/client/shared/Utils.Posix.cpp b/code/client/shared/Utils.Posix.cpp
+index cc563c328acd477447c1c6a9e7d17c12f6b9ef81..ae5dfdeb2e40c0c308cd00a44b6a2dcfb8adb701 100644
+--- a/code/client/shared/Utils.Posix.cpp
++++ b/code/client/shared/Utils.Posix.cpp
+@@ -9,29 +9,56 @@
+ #include "Utils.h"
+ 
+ #include <pthread.h>
++#ifdef __APPLE__
++#include <mach-o/dyld.h>
++#include <limits.h>
++#endif
+ 
+-fwPlatformString GetAbsoluteCitPath()
++namespace
+ {
+-	static fwPlatformString citizenPath;
+-
+-	if (!citizenPath.size())
+-	{
+-		// TODO: Linux-specific!
+-		pchar_t modulePath[512];
+-
+-		ssize_t off = readlink("/proc/self/exe", modulePath, sizeof(modulePath) - 1);
+-		assert(off >= 0);
+-
+-		modulePath[off] = '\0';
+-
+-		pchar_t* dirPtr = strrchr(modulePath, '/');
+-
+-		dirPtr[1] = '\0';
+-
+-		citizenPath = modulePath;
+-	}
++std::string GetExecutablePath()
++{
++#ifdef __APPLE__
++    uint32_t size = 0;
++    _NSGetExecutablePath(nullptr, &size);
++    std::vector<char> path(size);
++    if (_NSGetExecutablePath(path.data(), &size) != 0)
++    {
++        throw std::runtime_error("Could not determine executable path");
++    }
++    char resolved[PATH_MAX];
++    if (realpath(path.data(), resolved))
++    {
++        return resolved;
++    }
++    return path.data();
++#else
++    std::vector<char> path(512);
++    while (true)
++    {
++        ssize_t length = readlink("/proc/self/exe", path.data(), path.size());
++        if (length < 0)
++        {
++            throw std::runtime_error("Could not determine executable path");
++        }
++        if (static_cast<size_t>(length) < path.size())
++        {
++            return std::string(path.data(), length);
++        }
++        path.resize(path.size() * 2);
++    }
++#endif
++}
++}
+ 
+-	return citizenPath;
++fwPlatformString GetAbsoluteCitPath()
++{
++    static const fwPlatformString citizenPath = []()
++    {
++        const auto executable = GetExecutablePath();
++        return fwPlatformString(executable.substr(0, executable.find_last_of('/') + 1));
++    }();
++    return citizenPath;
+ }
+ 
+ fwPlatformString GetAbsoluteGamePath()
+@@ -41,24 +68,17 @@ fwPlatformString GetAbsoluteGamePath()
+ 
+ bool IsRunningTests()
+ {
+-	// TODO: Linux-specific!
+-	pchar_t modulePath[512];
+-	ssize_t off = readlink("/proc/self/exe", modulePath, sizeof(modulePath) - 1);
+-	assert(off >= 0);
+-
+-	modulePath[off] = '\0';
+-
+-	pchar_t* filenamePart = strrchr(modulePath, '/');
+-
+-	filenamePart++;
+-
+-	return !_strnicmp(filenamePart, "tests_", 6);
++    const auto executable = GetExecutablePath();
++    const auto filename = executable.substr(executable.find_last_of('/') + 1);
++    return !_strnicmp(filename.c_str(), "tests_", 6);
+ }
+ 
+ void SetThreadName(int dwThreadID, const char* threadName)
+ {
+-	// this is limited to 15 characters on Linux
+-	std::string shortenedName = std::string(threadName).substr(0, 15);
+-	
+-	pthread_setname_np(pthread_self(), shortenedName.c_str());
++#ifdef __APPLE__
++    pthread_setname_np(std::string(threadName).substr(0, 63).c_str());
++#else
++    std::string shortenedName = std::string(threadName).substr(0, 15);
++    pthread_setname_np(pthread_self(), shortenedName.c_str());
++#endif
+ }
+diff --git a/code/client/shared/XBRInit.cpp b/code/client/shared/XBRInit.cpp
+index f46cb17eadac3a7694d062355886e05def293fcf..1c87d9c37ce0715886c563a448f0848b91143c43 100644
+--- a/code/client/shared/XBRInit.cpp
++++ b/code/client/shared/XBRInit.cpp
+@@ -1,6 +1,6 @@
+ #include "StdInc.h"
+ 
+-#ifndef IS_FXSERVER
++#if defined(_WIN32) && !defined(IS_FXSERVER)
+ #include "CrossBuildRuntime.h"
+ 
+ #include <HostSharedData.h>
+diff --git a/code/components/vfs-impl-server/src/PlatformDevice.Posix.cpp b/code/components/vfs-impl-server/src/PlatformDevice.Posix.cpp
+index df8c72e160bdc36b096e05aaf58bc3cee72f8d5c..632b6c87b3690fc745c18770fc94ce81f7accba2 100644
+--- a/code/components/vfs-impl-server/src/PlatformDevice.Posix.cpp
++++ b/code/components/vfs-impl-server/src/PlatformDevice.Posix.cpp
+@@ -117,7 +117,7 @@ bool LocalDevice::RemoveFile(const std::string& filename)
+ 
+ bool LocalDevice::RenameFile(const std::string& from, const std::string& to)
+ {
+-	return (rename(from.c_str(), to.c_str()) != 0);
++	return (rename(from.c_str(), to.c_str()) == 0);
+ }
+ 
+ bool LocalDevice::CreateDirectory(const std::string& name)
+@@ -144,7 +144,10 @@ std::time_t LocalDevice::GetModifiedTime(const std::string& fileName)
+ size_t LocalDevice::GetLength(THandle handle)
+ {
+ 	struct stat buf;
+-	fstat(static_cast<int>(handle), &buf);
++	if (fstat(static_cast<int>(handle), &buf) != 0)
++	{
++		return size_t(-1);
++	}
+ 
+ 	return buf.st_size;
+ }
+@@ -249,7 +252,10 @@ bool LocalDevice::ExtensionCtl(int controlIdx, void* controlData, size_t control
+ 		auto data = reinterpret_cast<GetFileIdExtension*>(controlData);
+ 
+ 		struct stat buf;
+-		fstat(static_cast<int>(data->handle), &buf);
++		if (fstat(static_cast<int>(data->handle), &buf) != 0)
++		{
++			return false;
++		}
+ 
+ 		data->fileId = vfs::FileId{};
+ 		memcpy(data->fileId.data(), &buf.st_ino, std::min(sizeof(buf.st_ino), data->fileId.size()));

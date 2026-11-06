@@ -1,0 +1,61 @@
+diff --git a/code/client/citicore/FileMapping.Win32.cpp b/code/client/citicore/FileMapping.Win32.cpp
+index 4b334e9dcc5a9d5a525b99ef25aaf4e503412afd..ce9406eac150e0db4b9e2d63a26a82dd1967c8d0 100644
+--- a/code/client/citicore/FileMapping.Win32.cpp
++++ b/code/client/citicore/FileMapping.Win32.cpp
+@@ -1300,8 +1300,8 @@ extern "C" DLL_EXPORT void CoreSetMappingFunction(MappingFunctionType function)
+ 	MH_CreateHookApi(L"kernelbase.dll", "RegOpenKeyExW", RegOpenKeyExWStub, (void**)&g_origRegOpenKeyExW);
+ 	MH_CreateHookApi(L"kernelbase.dll", "GetFileAttributesExW", GetFileAttributesExWStub, (void**)&g_origGetFileAttributesExW);
+ 	MH_CreateHookApi(L"kernelbase.dll", "GetProcAddressForCaller", GetProcAddressStub, (void**)&g_origGetProcAddress);
+-	MH_CreateHookApi(L"kernel32.dll", "CreateThread", CreateThreadStub<&g_origCreateThread32>, (void**)&g_origCreateThread32);
+-	MH_CreateHookApi(L"kernelbase.dll", "CreateThread", CreateThreadStub<&g_origCreateThread>, (void**)&g_origCreateThread);
++	MH_CreateHookApi(L"kernel32.dll", "CreateThread", reinterpret_cast<LPVOID>(&CreateThreadStub<&g_origCreateThread32>), (void**)&g_origCreateThread32);
++	MH_CreateHookApi(L"kernelbase.dll", "CreateThread", reinterpret_cast<LPVOID>(&CreateThreadStub<&g_origCreateThread>), (void**)&g_origCreateThread);
+ 	MH_CreateHookApi(L"combase.dll", "CoUninitialize", CoUninitializeStub, (void**)&g_origCoUninitialize);
+ 	MH_EnableHook(MH_ALL_HOOKS);
+ 
+diff --git a/code/client/shared/Utils.Win32.cpp b/code/client/shared/Utils.Win32.cpp
+index 474f35f15cd6e96e279719e2f643d11bb22839d6..3d719ed1542a779528e1f7635499564585c52c03 100644
+--- a/code/client/shared/Utils.Win32.cpp
++++ b/code/client/shared/Utils.Win32.cpp
+@@ -7,6 +7,7 @@
+ 
+ #include "StdInc.h"
+ #include "Utils.h"
++#include "Win32Intrinsics.h"
+ 
+ #include <direct.h>
+ #include <io.h>
+@@ -289,7 +290,7 @@ void __cdecl _wwassert(
+ 	FatalErrorNoExcept("Assertion failure: %s\nFile: %s, Line: %d", ToNarrow(_Message), ToNarrow(_File), _Line);
+ 
+ #if defined(_M_AMD64)
+-	__writegsqword(0x38, (uintptr_t)_ReturnAddress());
++	cfx::compat::WriteGsQword(0x38, (uintptr_t)_ReturnAddress());
+ 	*(void**)_AddressOfReturnAddress() = &Win32TrapAndJump64;
+ #elif defined(_M_IX86)
+ 	__writefsdword(0x1C, (uintptr_t)_ReturnAddress());
+diff --git a/code/client/shared/Win32Intrinsics.h b/code/client/shared/Win32Intrinsics.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..d32c8ff23eb1f22a5e68de8af371d81e8ff13c11
+--- /dev/null
++++ b/code/client/shared/Win32Intrinsics.h
+@@ -0,0 +1,19 @@
++#pragma once
++
++#include <intrin.h>
++
++namespace cfx::compat
++{
++#if defined(_M_AMD64)
++inline void WriteGsQword(unsigned long offset, unsigned __int64 value)
++{
++#if defined(__clang__)
++    // Clang declares __writegsqword but does not lower it to an x64 intrinsic.
++    using GsWord = unsigned __int64 __attribute__((address_space(256)));
++    *reinterpret_cast<volatile GsWord*>(static_cast<unsigned __int64>(offset)) = value;
++#else
++    __writegsqword(offset, value);
++#endif
++}
++#endif
++}

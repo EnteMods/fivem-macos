@@ -1,0 +1,334 @@
+{
+  "base_revision": "9f0e34e1cbdfc34fd05079416791f01938279097",
+  "patches": [
+    {
+      "path": "patches/0001-darwin-arm64-core-foundation.patch",
+      "sha256": "6d15016f8ad72be8351af758be98e5f4acab631496f4d8fa98cb300447878cbf",
+      "source_files": [
+        "code/client/citicore/ComponentLoader.cpp",
+        "code/client/citicore/ComponentLoader.h",
+        "code/client/citicore/ResumeComponent.h",
+        "code/client/shared/CL2LaunchMode.h",
+        "code/client/shared/Registry.h",
+        "code/client/shared/Utils.Posix.cpp",
+        "code/client/shared/XBRInit.cpp",
+        "code/components/vfs-impl-server/src/PlatformDevice.Posix.cpp"
+      ],
+      "source_sha256": {
+        "code/client/citicore/ComponentLoader.cpp": "a1b63551554d7d01a5ec97aaa8df9f17a555082719477f42083e5625285201f9",
+        "code/client/citicore/ComponentLoader.h": "6712df15e325447fd8680ab6b60afa44ea3d415e25d429eff556ecf0ede4dbbe",
+        "code/client/citicore/ResumeComponent.h": "32ed648fda75474ac25f7e6f9d8145b8ac9e7caa0ced2ba5d720f5adf1ad80ed",
+        "code/client/shared/CL2LaunchMode.h": "f4857487607eee36058d3740dae6b2d1d32763026c516fd55bf94ffb59b02881",
+        "code/client/shared/Registry.h": "b5aa95cf0865921ff38a9eb648d2c1395d1c83b498fbbb3b1d14c7440a22eeeb",
+        "code/client/shared/Utils.Posix.cpp": "20cdd27ba860f9bc12fb2342d8cf8d2599c8f31dfdd2ab5e09e285b6fb532864",
+        "code/client/shared/XBRInit.cpp": "71e18c6617b8ec7b54f26efaf4deefd82e9f9aa3f5513f2cf6435dc5559faa8a",
+        "code/components/vfs-impl-server/src/PlatformDevice.Posix.cpp": "8d506c18edc5ef528f1116a2705afa38f85d4bc6e4a4bd15a38f2e52fe3bd47b"
+      }
+    },
+    {
+      "path": "patches/0002-wine-corert-diagnostics-and-unwind.patch",
+      "sha256": "b67d687c5da6fc16e64f3e8a1f4065b0c0602b9499883147390056edb37cad95",
+      "source_files": [
+        "code/client/citicore/DllGameComponent.Win32.cpp",
+        "code/client/citicore/LoaderDiagnostics.h",
+        "code/client/citicore/SEHTableHandler.Win32.cpp",
+        "code/client/citicore/WineExceptionFilter.h",
+        "code/client/citicore/WineFunctionTable.h"
+      ],
+      "source_sha256": {
+        "code/client/citicore/DllGameComponent.Win32.cpp": "e6cdafd33575617581727744a37b8a41ed258590f2d1e08a839ffeb9f3f0c9ce",
+        "code/client/citicore/LoaderDiagnostics.h": "cd7a3426ffb4dae3a55d224c3b511c63d6705cdd43ae43bb2714b8a1fc970969",
+        "code/client/citicore/SEHTableHandler.Win32.cpp": "5205e85793a7232819dee4773aef4bce190ba681134f4808797623906e81bb27",
+        "code/client/citicore/WineExceptionFilter.h": "607c98ec700c53dffd8cfbd69eb2a260d7407e5ec344dd0565421ca2cdb6377c",
+        "code/client/citicore/WineFunctionTable.h": "674e4f2329485ceae1558452a25fca56258c7ca8c373f9eaf9de105e56acccfb"
+      }
+    },
+    {
+      "path": "patches/0003-clang-cl-msvc-source-portability.patch",
+      "sha256": "e35b6384616c7efe8e2a3e8bc663c59ddd4c3276ed2e52821154e1f6d8d68d27",
+      "source_files": [
+        "code/client/citicore/FileMapping.Win32.cpp",
+        "code/client/shared/Win32Intrinsics.h",
+        "code/client/shared/Utils.Win32.cpp"
+      ],
+      "source_sha256": {
+        "code/client/citicore/FileMapping.Win32.cpp": "71c853b9205e14033e5d79b3fe4ede5b3c61a42d4ebb6a1127ee509771ad8c9c",
+        "code/client/shared/Win32Intrinsics.h": "2b1fbb03cb9469c7da58bee03c0202debab246740950ceadfa0dfa30e6873b93",
+        "code/client/shared/Utils.Win32.cpp": "6170f21213c03d892f4d11f7c1cfc7e49f28bb582bd991dae5cb9949cb58946f"
+      }
+    },
+    {
+      "path": "patches/0004-launcher-wine-crashfilter.patch",
+      "source_files": [
+        "code/client/shared/CrashFilterPolicy.h",
+        "code/client/launcher/MiniDump.Shared.cpp"
+      ],
+      "sha256": "c496ab74292f348d7f2d5da5056bb151602e8fd558200e550368b047f52c1f4a",
+      "source_sha256": {
+        "code/client/shared/CrashFilterPolicy.h": "bb4ba6cde0befa1fe27c4fe35022d7752c7a948361fdbb3d4245b124ba79dd89",
+        "code/client/launcher/MiniDump.Shared.cpp": "544f0741b15d1926d113b49adcc527971a20c7ea2a9e63d2e5b4f86004e49d40"
+      }
+    },
+    {
+      "path": "patches/0005-clang-cl-nui-lifetime.patch",
+      "sha256": "b3ccab497a664e4b9869447fd0e749dfa1e5486f2e33ddf831f26d64b89171c4",
+      "source_files": [
+        "code/components/nui-core/src/NUIClient.cpp"
+      ],
+      "source_sha256": {
+        "code/components/nui-core/src/NUIClient.cpp": "23f47bb7b353bcbfc29d3cc3f15ec48495f3d570fbade97b9e2d307037c990fc"
+      }
+    },
+    {
+      "path": "patches/0006-clang-cl-main-source-portability.patch",
+      "sha256": "16fd800c32c9552fb6d9ff22c84fb3c8482855fc945cb474348443880e996427",
+      "source_files": [
+        "code/client/shared/Hooking.Patterns.h",
+        "code/client/launcher/GameCache.cpp",
+        "code/client/launcher/Updater.cpp"
+      ],
+      "source_sha256": {
+        "code/client/shared/Hooking.Patterns.h": "9b7eb642e8a9ef393b9c9654e175f7c8380a23feb3b36246ce5c385b635376a4",
+        "code/client/launcher/GameCache.cpp": "c98011da743222f79168b0854dadc7029de0ddf5f23005f82dc4a3a9f84f8207",
+        "code/client/launcher/Updater.cpp": "007659de76362072a4de8b2b8a7ac94157168e9ae7f85d4bbbf60be6f8f64ec8"
+      }
+    },
+    {
+      "path": "patches/0007-public-startup-phase-diagnostics.patch",
+      "sha256": "e0b7620d83dfd7f1b9c6c2b8f4f530ed8eef8cfaf44ab3f2324aea5f3b42c25c",
+      "scope": "Optional PID/TID/fixed-phase and sanitized public-component caller diagnostics; identical original OFF traversal; build option OFF by default; no security-module changes",
+      "source_files": [
+        "code/client/shared/StartupPhaseTrace.h",
+        "code/client/launcher/Main.cpp",
+        "code/client/citigame/Launcher.cpp"
+      ],
+      "source_sha256": {
+        "code/client/shared/StartupPhaseTrace.h": "c48347de234bdd200ccc6539177c8d15ea016e1e870a31545ff76ad8220c786a",
+        "code/client/launcher/Main.cpp": "25b95c5bd2136b6207f6e93633bd1e6afe44799e753bdb92af9d1b6af265df3d",
+        "code/client/citigame/Launcher.cpp": "f0a76129639e1254605bc07ab93013da3c03a7f94384ced4feec214085953859"
+      }
+    },
+    {
+      "path": "patches/0008-corert-mapping-diagnostics.patch",
+      "sha256": "be46bf86ee12546298eb3ae8ce345738929fc96e9cf2d30474daf3993c0c405b",
+      "scope": "Optional fixed mapping phases, PID and three booleans only; eight trace calls and a new header; default OFF; original provider, branches, hook status handling and security decisions unchanged",
+      "source_files": [
+        "code/client/citicore/FileMapping.Win32.cpp",
+        "code/client/citicore/MappingDiagnostics.h"
+      ],
+      "source_sha256": {
+        "code/client/citicore/FileMapping.Win32.cpp": "1e2e23846410586e27117716ba8ea4ee8be3681469d50015391c4f10ce2e3053",
+        "code/client/citicore/MappingDiagnostics.h": "9cab07670dfcbd4134d5d60af5d28e745c753576c12107b270b0a8f3df033b31"
+      },
+      "previous_source_sha256": {
+        "code/client/citicore/FileMapping.Win32.cpp": "71c853b9205e14033e5d79b3fe4ede5b3c61a42d4ebb6a1127ee509771ad8c9c"
+      }
+    },
+    {
+      "path": "patches/0009-corert-optional-hook-ownership.patch",
+      "sha256": "be90af3d92d7829dd0089e2ea8bfe362e8844652d8af770dc4fdb3260db4589b",
+      "scope": "Keep loader diagnostic hooks local to successfully created non-null targets.",
+      "source_files": [
+        "code/client/citicore/DllGameComponent.Win32.cpp"
+      ],
+      "source_sha256": {
+        "code/client/citicore/DllGameComponent.Win32.cpp": "c64b2f587608034c90c9b5b6ec6cb6206c698f0ee3f230ce6f035fb83eee43cd"
+      },
+      "previous_source_sha256": {
+        "code/client/citicore/DllGameComponent.Win32.cpp": "e6cdafd33575617581727744a37b8a41ed258590f2d1e08a839ffeb9f3f0c9ce"
+      }
+    }
+  ],
+  "submodules": [
+    "vendor/boost-submodules/boost-algorithm",
+    "vendor/boost-submodules/boost-align",
+    "vendor/boost-submodules/boost-any",
+    "vendor/boost-submodules/boost-array",
+    "vendor/boost-submodules/boost-asio",
+    "vendor/boost-submodules/boost-assert",
+    "vendor/boost-submodules/boost-atomic",
+    "vendor/boost-submodules/boost-beast",
+    "vendor/boost-submodules/boost-bimap",
+    "vendor/boost-submodules/boost-bind",
+    "vendor/boost-submodules/boost-chrono",
+    "vendor/boost-submodules/boost-circular-buffer",
+    "vendor/boost-submodules/boost-concept-check",
+    "vendor/boost-submodules/boost-config",
+    "vendor/boost-submodules/boost-container",
+    "vendor/boost-submodules/boost-container-hash",
+    "vendor/boost-submodules/boost-context",
+    "vendor/boost-submodules/boost-core",
+    "vendor/boost-submodules/boost-coroutine",
+    "vendor/boost-submodules/boost-crc",
+    "vendor/boost-submodules/boost-date-time",
+    "vendor/boost-submodules/boost-describe",
+    "vendor/boost-submodules/boost-detail",
+    "vendor/boost-submodules/boost-endian",
+    "vendor/boost-submodules/boost-exception",
+    "vendor/boost-submodules/boost-filesystem",
+    "vendor/boost-submodules/boost-foreach",
+    "vendor/boost-submodules/boost-function",
+    "vendor/boost-submodules/boost-function-types",
+    "vendor/boost-submodules/boost-fusion",
+    "vendor/boost-submodules/boost-integer",
+    "vendor/boost-submodules/boost-intrusive",
+    "vendor/boost-submodules/boost-io",
+    "vendor/boost-submodules/boost-iostreams",
+    "vendor/boost-submodules/boost-iterator",
+    "vendor/boost-submodules/boost-lexical-cast",
+    "vendor/boost-submodules/boost-locale",
+    "vendor/boost-submodules/boost-logic",
+    "vendor/boost-submodules/boost-math",
+    "vendor/boost-submodules/boost-move",
+    "vendor/boost-submodules/boost-mp11",
+    "vendor/boost-submodules/boost-mpl",
+    "vendor/boost-submodules/boost-multi-index",
+    "vendor/boost-submodules/boost-numeric-conversion",
+    "vendor/boost-submodules/boost-optional",
+    "vendor/boost-submodules/boost-outcome",
+    "vendor/boost-submodules/boost-predef",
+    "vendor/boost-submodules/boost-preprocessor",
+    "vendor/boost-submodules/boost-program-options",
+    "vendor/boost-submodules/boost-property-tree",
+    "vendor/boost-submodules/boost-random",
+    "vendor/boost-submodules/boost-range",
+    "vendor/boost-submodules/boost-ratio",
+    "vendor/boost-submodules/boost-regex",
+    "vendor/boost-submodules/boost-scope",
+    "vendor/boost-submodules/boost-serialization",
+    "vendor/boost-submodules/boost-smart-ptr",
+    "vendor/boost-submodules/boost-static-assert",
+    "vendor/boost-submodules/boost-static-string",
+    "vendor/boost-submodules/boost-system",
+    "vendor/boost-submodules/boost-thread",
+    "vendor/boost-submodules/boost-throw-exception",
+    "vendor/boost-submodules/boost-tokenizer",
+    "vendor/boost-submodules/boost-tti",
+    "vendor/boost-submodules/boost-tuple",
+    "vendor/boost-submodules/boost-type-index",
+    "vendor/boost-submodules/boost-type-traits",
+    "vendor/boost-submodules/boost-unordered",
+    "vendor/boost-submodules/boost-utility",
+    "vendor/boost-submodules/boost-uuid",
+    "vendor/boost-submodules/boost-variant",
+    "vendor/boost-submodules/boost-winapi",
+    "vendor/breakpad",
+    "vendor/cpp-url",
+    "vendor/cpr",
+    "vendor/curl",
+    "vendor/fmtlib",
+    "vendor/hdiffpatch",
+    "vendor/jitasm",
+    "vendor/mbedtls",
+    "vendor/minhook",
+    "vendor/minizip",
+    "vendor/nghttp2",
+    "vendor/openssl",
+    "vendor/range-v3",
+    "vendor/rapidjson",
+    "vendor/tbb",
+    "vendor/tinyxml2",
+    "vendor/udis86",
+    "vendor/utfcpp",
+    "vendor/xz",
+    "vendor/zlib",
+    "vendor/zstd"
+  ],
+  "full_client_verified": false,
+  "source_compatibility_only": true,
+  "submodule_pins": {
+    "vendor/boost-submodules/boost-algorithm": "32c5a6327cfdca5d41ce0f1d8849b811886daa2f",
+    "vendor/boost-submodules/boost-align": "5ad7df63cd792fbdb801d600b93cad1a432f0151",
+    "vendor/boost-submodules/boost-any": "aee53090c04bd0a263480fae25fddddcef54ca82",
+    "vendor/boost-submodules/boost-array": "23f6b27c0d9916b9932baac898ae3009817a9153",
+    "vendor/boost-submodules/boost-asio": "b80d19926db8ce52ca3801f8500ffeae0de75ccf",
+    "vendor/boost-submodules/boost-assert": "447e0b3a331930f8708ade0e42683d12de9dfbc3",
+    "vendor/boost-submodules/boost-atomic": "5bbcce0f6e855dc4009e2e6977c62e0520c39573",
+    "vendor/boost-submodules/boost-beast": "075db2fc370ecbe822ab8c2ead954a88e9c95c18",
+    "vendor/boost-submodules/boost-bimap": "e5c2657a9e2d6184622ad4ccd1373e6c60a7efca",
+    "vendor/boost-submodules/boost-bind": "9fbfdcb3577e9427815d4f8cc25b3a25d5b9696b",
+    "vendor/boost-submodules/boost-chrono": "ee0d6d543a37d9b7243682549e9ae359eb89daa9",
+    "vendor/boost-submodules/boost-circular-buffer": "a08a5b55ee82e0c2487523471379ac53a23935dc",
+    "vendor/boost-submodules/boost-concept-check": "37c9bddf0bdefaaae0ca5852c1a153d9fc43f278",
+    "vendor/boost-submodules/boost-config": "11385ec21012926e15a612e3bf9f9a71403c1e5b",
+    "vendor/boost-submodules/boost-container": "6e697d796897b32b471b4f0740dcaa03d8ee57cc",
+    "vendor/boost-submodules/boost-container-hash": "6d214eb776456bf17fbee20780a034a23438084f",
+    "vendor/boost-submodules/boost-context": "1bde50e400547e29336afe7ea0cd693d8c884fb6",
+    "vendor/boost-submodules/boost-core": "8cc2fdad76b3e2ba67fe6b5dd3c44ee29dd2ab29",
+    "vendor/boost-submodules/boost-coroutine": "1e1347c0b1910b9310ec1719edad8b0bf2fd03c8",
+    "vendor/boost-submodules/boost-crc": "e3b1e56890a701ded5e66929579fb7fa62ac6bcc",
+    "vendor/boost-submodules/boost-date-time": "85e637cb325208c2af9af791c3a1948b4888c6cd",
+    "vendor/boost-submodules/boost-describe": "50719b212349f3d1268285c586331584d3dbfeb5",
+    "vendor/boost-submodules/boost-detail": "9c3a0022b25d3e483f9100cc363bc93a72fd900a",
+    "vendor/boost-submodules/boost-endian": "c9b436e5dfce85e8ae365e5aabbb872dd35c29eb",
+    "vendor/boost-submodules/boost-exception": "b9170a02f102250b308c9f94ed6593c5f30eab39",
+    "vendor/boost-submodules/boost-filesystem": "6f174ba14369143d28ae72f4c697660c65cecae6",
+    "vendor/boost-submodules/boost-foreach": "cc2f75ae30492b9de69b3b692f5c59afcb7dea5e",
+    "vendor/boost-submodules/boost-function": "28b88d07bb4807445462c3f5dab0efde6f532d32",
+    "vendor/boost-submodules/boost-function-types": "895335874d67987ada0d8bf6ca1725e70642ed49",
+    "vendor/boost-submodules/boost-fusion": "7d4c03fa032299f2d46149b7b3136c9fd43e4f81",
+    "vendor/boost-submodules/boost-integer": "dea8e3445dc3ca29201498260307138b9460a70c",
+    "vendor/boost-submodules/boost-intrusive": "e997641e7d385748d706209c2fff28871c31c667",
+    "vendor/boost-submodules/boost-io": "342e4c6d10d586058818daa84201a2d301357a53",
+    "vendor/boost-submodules/boost-iostreams": "6be38c3449a64b15213c6a490d357c9a2ac2470b",
+    "vendor/boost-submodules/boost-iterator": "4f7219965a399051bb0d8088ea4ab3929b1ac3f2",
+    "vendor/boost-submodules/boost-lexical-cast": "02e5821ab32c45fad719829e9644e5d681c9ba0b",
+    "vendor/boost-submodules/boost-locale": "a3dddcef362c241845ad2dd203e2ca7a503569e4",
+    "vendor/boost-submodules/boost-logic": "145778490c2d332c1411df6a5274a4b53ec3e091",
+    "vendor/boost-submodules/boost-math": "4d0885ae44f7d4ce94568339b2ae5501eb234e8f",
+    "vendor/boost-submodules/boost-move": "7c01072629d83a7b54c99de70ef535d699ebd200",
+    "vendor/boost-submodules/boost-mp11": "863d8b8d2b20f2acd0b5870f23e553df9ce90e6c",
+    "vendor/boost-submodules/boost-mpl": "b440c45c2810acbddc917db057f2e5194da1a199",
+    "vendor/boost-submodules/boost-multi-index": "fab1601a4239e957c128d7d113b812dfaddc06fd",
+    "vendor/boost-submodules/boost-numeric-conversion": "50a1eae942effb0a9b90724323ef8f2a67e7984a",
+    "vendor/boost-submodules/boost-optional": "c60db27762ff9cc16529e069c3c15f2fa898f994",
+    "vendor/boost-submodules/boost-outcome": "fa4e0d7fe2c825f6522cb418d7939d6816a9fbbd",
+    "vendor/boost-submodules/boost-predef": "0fdfb49c3a6789e50169a44e88a07cc889001106",
+    "vendor/boost-submodules/boost-preprocessor": "c4ea7e40d365ba28faecef8917d5c3f1e0121bf9",
+    "vendor/boost-submodules/boost-program-options": "2b8bac66a9911fe537a7e04e25642f44a6aaf5ca",
+    "vendor/boost-submodules/boost-property-tree": "8080ecd14f2d952a4bb7ae869fc0f54f54f5a31f",
+    "vendor/boost-submodules/boost-random": "09594050246adcf944be2b2c8dd2b9901083de79",
+    "vendor/boost-submodules/boost-range": "2bb6b636796f7b008196888613f51f5bb347c77d",
+    "vendor/boost-submodules/boost-ratio": "d5b33caa7d564be9be6d962b18659b7741d764ac",
+    "vendor/boost-submodules/boost-regex": "4cbcd3078e6ae10d05124379623a1bf03fcb9350",
+    "vendor/boost-submodules/boost-scope": "8321450aca6fc6a075225ba225036e585ce1716b",
+    "vendor/boost-submodules/boost-serialization": "a20c4d97c37e5f437c8ba78f296830edb79cff9e",
+    "vendor/boost-submodules/boost-smart-ptr": "3ef8cfd02f9cb3e0486c26f35ed4c27c6f26bd5f",
+    "vendor/boost-submodules/boost-static-assert": "ba72d3340f3dc6e773868107f35902292f84b07e",
+    "vendor/boost-submodules/boost-static-string": "ac84c4f40ec38f7a7237255738e3e5259aa4a1a8",
+    "vendor/boost-submodules/boost-system": "2fc720a1cbe51d588fecc4e0af9417bd769381d8",
+    "vendor/boost-submodules/boost-thread": "aec18d337f41d8e3081ee65f5cf3b5090179ab0e",
+    "vendor/boost-submodules/boost-throw-exception": "7c8ec2114bc1f9ab2a8afbd629b96fbdd5901294",
+    "vendor/boost-submodules/boost-tokenizer": "90106f155bd72b62aaca0d9ad826f4132030dba0",
+    "vendor/boost-submodules/boost-tti": "03734c54a51b6372ac3296d2fe5103b7360bcd3f",
+    "vendor/boost-submodules/boost-tuple": "b67941dd7d03536a854b96f001954792311ab515",
+    "vendor/boost-submodules/boost-type-index": "e37bc99e85e85bcac420ac1d4c1a8a5bca280d47",
+    "vendor/boost-submodules/boost-type-traits": "cc6fc3daa8e20c4a70b563d67ceb4c34d8c1c4d7",
+    "vendor/boost-submodules/boost-unordered": "15cfef696763907f5a930e29b80440bb45e15237",
+    "vendor/boost-submodules/boost-utility": "e0ecf927643b13c63dfd9a38741315ea8b845135",
+    "vendor/boost-submodules/boost-uuid": "beeaab4758c2f48d0451c759a600b34116c20906",
+    "vendor/boost-submodules/boost-variant": "b33ff4f811a27d4dc4a4c8a840310523de4df4f8",
+    "vendor/boost-submodules/boost-winapi": "39396bd78254053f3137510478e8f956bd2b83d4",
+    "vendor/breakpad": "bb91c13e2c0664209941ef96a839c1042622c5ec",
+    "vendor/cpp-url": "061a46f651b5f70cadc90e69359a4eebc3e6789e",
+    "vendor/cpr": "e40e2c0cec3b1f06ccf8cf28210e18670adbc788",
+    "vendor/curl": "b97ad1d4b0c2bd6defab609df7ba6c2b0668c206",
+    "vendor/fmtlib": "d141cdbeb0fb422a3fb7173b285fd38e0d1772dc",
+    "vendor/hdiffpatch": "f62556a781f00cbe9212945bafed3ce01849c553",
+    "vendor/jitasm": "981a592990c9271567c7a7c142681f67a8e19d47",
+    "vendor/mbedtls": "523f0554b6cdc7ace5d360885c3f5bbcc73ec0e8",
+    "vendor/minhook": "b03840395033006c888288ac00a4608d8e2684cf",
+    "vendor/minizip": "351b14e5129e693e9aebf0cf1f39cf6298d38d29",
+    "vendor/nghttp2": "8f44147c385fb1ed93a6f39911eeb30279bfd2dd",
+    "vendor/openssl": "830bf8e1e4749ad65c51b6a1d0d769ae689404ba",
+    "vendor/range-v3": "7e6f34b1e820fb8321346888ef0558a0ec842b8e",
+    "vendor/rapidjson": "bfdcf4911047688fec49014d575433e2e5eb05be",
+    "vendor/tbb": "0c40f25dd3d8fa2b8b8a73babc5df41587fc859f",
+    "vendor/tinyxml2": "37bc3aca429f0164adf68c23444540b4a24b5778",
+    "vendor/udis86": "3024bfd4eeef0ae497395dd9dd8cb1cc05e0cf0c",
+    "vendor/utfcpp": "aed58281cf45838bdb7296e3109bd5a633d677ed",
+    "vendor/xz": "18b845e69752c975dfeda418ec00eda22605c2ee",
+    "vendor/zlib": "ec3df00224d4b396e2ac6586ab5d25f673caa4c2",
+    "vendor/zstd": "a488ba114ec17ea1054b9057c26a046fc122b3b6"
+  }
+}

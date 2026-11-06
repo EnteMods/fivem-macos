@@ -1,0 +1,13 @@
+diff --git a/code/components/nui-core/src/NUIClient.cpp b/code/components/nui-core/src/NUIClient.cpp
+index bf40f4c1ca287770e160209faba7df28dec6b4a8..ef1bb26da3072df6f0c04b74c3b62871e74b1c64 100644
+--- a/code/components/nui-core/src/NUIClient.cpp
++++ b/code/components/nui-core/src/NUIClient.cpp
+@@ -571,7 +571,7 @@ auto NUIClient::OnBeforeResourceLoad(CefRefPtr<CefBrowser> browser, CefRefPtr<Ce
+ 
+ 	if (cfx::legitimacy::ShouldProcessHeaders(hostString.c_str()))
+ 	{
+-		auto& frameUrl = (frame) ? frame->GetURL().ToString() : std::string{};
++		const auto& frameUrl = (frame) ? frame->GetURL().ToString() : std::string{};
+ 
+ 		if (!IsTrustedEntitlementFrame(frameUrl))
+ 		{
