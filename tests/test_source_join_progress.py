@@ -62,3 +62,25 @@ class SourceJoinProgressTests(unittest.TestCase):
             'counts': {'network_active_game_load_requested': 1},
             'latest': {'tick_ms': 3, 'phase': 'network_active_game_load_requested'},
         })
+
+    def test_resource_error_is_distinct_when_wrapped_by_connection_error(self):
+        raw = io.BytesIO(b''.join((
+            line(100, 'OnConnectionProgress: Downloading content'),
+            line(101, 'Could not get resource mounter for resource mapmanager.'),
+            line(102, 'OnConnectionError: ^1Could not get resource mounter for resource mapmanager.'),
+        )))
+        self.assertEqual(progress.summarize(raw), {
+            'counts': {'server_resource_download_started': 1, 'resource_mounter_error': 2},
+            'latest': {'tick_ms': 102, 'phase': 'resource_mounter_error'},
+        })
+
+    def test_mounter_diagnostics_export_only_a_fixed_scheme_class(self):
+        for scheme, expected in (('ci', 'ci'), ('global', 'global'), ('PRIVATE-IDENTIFIER', 'other')):
+            with self.subTest(scheme=scheme):
+                raw = io.BytesIO(line(200, 'Resource URI ' + scheme +
+                    '://private-user/private-path?ticket=private-ticket#private-fragment has no mounter.'))
+                self.assertEqual(progress.summarize(raw), {
+                    'counts': {'resource_uri_without_mounter': 1},
+                    'latest': {'tick_ms': 200, 'phase': 'resource_uri_without_mounter',
+                               'scheme_class': expected},
+                })

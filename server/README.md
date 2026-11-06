@@ -6,7 +6,9 @@ This describes the project's **test setup**, not a server fork or a ready-to-dep
 
 On 6 November 2026, TCP `/info.json` and UDP `getinfo` health checks succeeded from the intended test client. Separate bridge-container checks were blocked and all four dedicated firewall rule counters increased. An independent unauthorized external source was not available for testing. These observations concern that particular configuration at that time; they do not establish ongoing availability or a general firewall guarantee.
 
-**A FiveM join, player spawn and gameplay were not tested.** Normal public-server admission and Cfx ticket issuance were not proven. The macOS client still has the authentication limitations described in [known issues](../docs/KNOWN_ISSUES.md). Do not assume LAN mode resolves them.
+**A FiveM join was attempted and failed during resource initialization.** The client reached handshake and the start of resource loading, then reported a missing mounter for `mapmanager`; its log classified the resource URI scheme as `ci`. No spawn or gameplay was demonstrated. Normal public-server admission and Cfx ticket issuance were not proven. The macOS client still has the limitations described in [known issues](../docs/KNOWN_ISSUES.md).
+
+LAN mode alone was insufficient with this standard binary distribution. [Cfx issue #3654](https://github.com/citizenfx/fivem/issues/3654) describes a public source-built server as an alternative for development clients. The project is preparing that separate build at the matching source revision using the upstream public CI route. The existing server remains in place until an artifact is built and checked; a built or deployed replacement is not claimed yet. No client URI rewrite or fabricated ci implementation is used. Track [issue #8](https://github.com/EnteMods/fivem-macos/issues/8).
 
 ## Components and operating model
 

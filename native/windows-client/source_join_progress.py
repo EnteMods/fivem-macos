@@ -24,6 +24,8 @@ PROGRESS = {
 CACHE = re.compile(r'(Verifying game content|Updating game storage)\.\.\. \(([0-9]{1,3})%\)')
 ACK = re.compile(r'Received connectOK: ServerID -?[0-9]+, SlotID -?[0-9]+, HostID -?[0-9]+')
 BUILD_SWITCH = re.compile(r'Switching from build ([0-9]{1,6}) to build ([0-9]{1,6}) \(exe ([0-9]{1,6})\)\.\.\.')
+MOUNTER_FAILURE = re.compile(r'Could not get resource mounter for resource [A-Za-z0-9_.-]{1,128}\.')
+MOUNTER_URI_FAILURE = re.compile(r'Resource URI ([A-Za-z][A-Za-z0-9+.-]{0,31}):[^\r\n]{0,4096} has no mounter\.')
 MAX_LINE_BYTES = 8192
 
 
@@ -34,6 +36,10 @@ def parse_event(line):
     tick, message = match.groups()
     message = message.removeprefix('^2')
     percent = None
+    if uri_failure := MOUNTER_URI_FAILURE.fullmatch(message):
+        scheme = uri_failure[1].lower()
+        return {'tick_ms': int(tick), 'phase': 'resource_uri_without_mounter',
+                'scheme_class': scheme if scheme in ('global', 'ci') else 'other'}
     if switch := BUILD_SWITCH.fullmatch(message):
         return {'tick_ms': int(tick), 'phase': 'game_build_switch_requested',
                 'from_build': int(switch[1]), 'to_build': int(switch[2]), 'exe_build': int(switch[3])}
@@ -57,8 +63,9 @@ def parse_event(line):
     elif message == 'OnConnectionError: Connection rejected by server: No authentication ticket was specified.':
         phase = 'server_rejected_missing_auth_ticket'
     elif message.startswith('OnConnectionError: '):
-        phase = 'connection_error'
-    elif message.startswith('Could not get resource mounter for resource '):
+        error = re.sub(r'\^[0-9]', '', message.removeprefix('OnConnectionError: '))
+        phase = 'resource_mounter_error' if MOUNTER_FAILURE.fullmatch(error) else 'connection_error'
+    elif MOUNTER_FAILURE.fullmatch(message):
         phase = 'resource_mounter_error'
     else:
         return None

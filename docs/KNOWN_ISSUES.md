@@ -9,6 +9,13 @@
 - [#5 — Retina, fullscreen and mouse-coordinate QA](https://github.com/EnteMods/fivem-macos/issues/5)
 - [#6 — Complete isolated LAN multiplayer acceptance](https://github.com/EnteMods/fivem-macos/issues/6)
 - [#7 — Rockstar connection error 506 before the menu](https://github.com/EnteMods/fivem-macos/issues/7)
+- [#8 — Resource URI has no matching ci mounter](https://github.com/EnteMods/fivem-macos/issues/8)
+
+## Isolated LAN join: resource mounter failure
+
+The controlled 6 November join attempt reached server variables, handshake and resource loading, then failed on `mapmanager`. The fixed-field log reader classified the missing resource URI scheme as `ci`; it exports no URI payload. The public cache mounter handles `global`, while ResourceNetBindings accepts a server-supplied URI override. The deployed mapmanager source matched its pinned public checkout and uses a recognized manifest version. This does not establish the private ci-provider contract or correct package contents.
+
+The unchanged official Recommended server with instance-wide LAN mode was therefore insufficient for this source/Wine test. [Cfx issue #3654](https://github.com/citizenfx/fivem/issues/3654) describes using a public source-built server as a development alternative. The matching public server build is being prepared separately, with normal upstream ticket code and the existing restricted development network. No ci adapter or URI rewrite was applied. Spawn and gameplay remain unverified. See [issue #8](https://github.com/EnteMods/fivem-macos/issues/8).
 
 ## Intermittent Rockstar 506 and observed recovery
 
