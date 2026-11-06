@@ -5,11 +5,9 @@ import argparse
 from collections import Counter
 import json
 import os
+from pathlib import Path
 import re
 import stat
-
-from run_main import plain
-from source_code_identity import STAGE
 
 
 LOG_NAME = re.compile(r'CitizenFX_log_[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}\.log')
@@ -92,18 +90,52 @@ def summarize(stream):
     return {'counts': dict(counts), 'latest': last}
 
 
-def main():
+def open_client_log(path):
+    path = Path(os.path.abspath(path))
+    if not LOG_NAME.fullmatch(path.name):
+        raise ValueError('Expected one CitizenFX client log basename')
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    parent = os.open(path.anchor, directory_flags)
+    descriptor = None
+    try:
+        for name in path.parts[1:-1]:
+            next_parent = os.open(name, directory_flags, dir_fd=parent)
+            os.close(parent)
+            parent = next_parent
+        descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ValueError('Expected an independent regular client log file')
+        stream = os.fdopen(descriptor, 'rb')
+        descriptor = None
+        return stream
+    finally:
+        os.close(parent)
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('log_name', help='One CitizenFX_log_YYYY-MM-DDTHHMMSS.log basename from the Source stage')
-    args = parser.parse_args()
-    if not LOG_NAME.fullmatch(args.log_name):
-        parser.error('Expected one Source client log basename')
-    path = STAGE / 'logs' / args.log_name
-    plain(path)
-    with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), 'rb') as stream:
-        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
-            raise RuntimeError('Expected a regular Source client log file')
-        summary = summarize(stream)
+    parser.add_argument('log_name', nargs='?', help='One client log basename, used with --logs-dir')
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument('--log', type=Path, help='Explicit client log file; no installation discovery')
+    selection.add_argument('--logs-dir', type=Path, help='Explicit logs directory, followed by a log basename')
+    args = parser.parse_args(argv)
+    if args.log is not None:
+        if args.log_name is not None:
+            parser.error('--log takes no additional basename')
+        path = args.log
+    else:
+        if args.log_name is None or not LOG_NAME.fullmatch(args.log_name):
+            parser.error('--logs-dir requires one CitizenFX_log_YYYY-MM-DDTHHMMSS.log basename')
+        path = args.logs_dir / args.log_name
+    try:
+        with open_client_log(path) as stream:
+            summary = summarize(stream)
+    except (OSError, ValueError) as error:
+        parser.exit(1, 'Client log could not be read (' + type(error).__name__ +
+                    '); select one regular file through a path without redirects.\n')
     print(json.dumps(summary, sort_keys=True))
 
 

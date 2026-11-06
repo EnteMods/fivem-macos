@@ -18,13 +18,17 @@ A subsequent controlled client start on the same day stopped before the menu wit
 
 The public upstream Windows-source reference is commit `88a413835e9d7f56633f249880a13f42297153a2`. The older native ARM64 patch queue has its own base and file pins in [config/native-port.json](config/native-port.json); do not assume both source bases are interchangeable. The separately installed official production client, content version `1257409`, remained unchanged during the recorded source-port work.
 
-Multiplayer is unresolved. Earlier measured attempts reached the client authentication interception point without a handler at the observed instance and time; the server rejected the request for a missing Cfx connection ticket. The public source does not establish a supported independent ticket issuer. The normal Wine component selection and its insecure-mode warning remain in effect. See [known issues](docs/KNOWN_ISSUES.md).
+**A real join to the project's isolated public-source LAN development server now works.** On 6 November, the existing Mac client completed resource download, received the server's protocol acknowledgement and finished loading the game. The server reported one player; the owner confirmed character movement, camera control and general interaction. See the [tested session and its limits](docs/TESTED_LAN_SESSION.md). This was an existing locally bound installation, not a fresh install or a performance benchmark.
+
+Normal ticket-authenticated multiplayer remains unresolved. Earlier measured attempts reached the client authentication interception point without a handler at the observed instance and time; the server rejected the request for a missing Cfx connection ticket. The public source does not establish a supported independent ticket issuer. The normal Wine component selection and its insecure-mode warning remain in effect. See [known issues](docs/KNOWN_ISSUES.md).
 
 ### Server compatibility
 
-Do not expect this client to join normal ticket-authenticated FiveM servers. Current testing is limited to the project's own isolated compatibility test environment. The server runs the official Recommended Linux build `38317` in LAN development mode, with scoped network restrictions. TCP/UDP health checks and a blocked-source container check passed; an independent external blocked-source test was not available. A client join reached handshake and resource loading, then failed because no mounter handled a `ci` resource URI. A matching public source-built server is being prepared as the upstream-described development alternative; no completed replacement, spawn or gameplay is claimed. See [issue #8](https://github.com/EnteMods/fivem-macos/issues/8). An OS-selective authentication-exemption fork is not implemented. A client-reported OS is not trusted platform attestation.
+Do not expect this client to join normal ticket-authenticated FiveM servers. Testing is limited to the project's own network-restricted development environment. The unchanged official Recommended `38317` binary in LAN mode failed because this source client had no mounter for a `ci` resource URI. Replacing that test instance with the matching public-source FXServer built from `88a413835e9d7f56633f249880a13f42297153a2` resolved the observed resource error and allowed the tested game session. No client URI rewrite or ci-provider imitation was added. See [issue #8](https://github.com/EnteMods/fivem-macos/issues/8).
 
-This restriction is a testing boundary, not a claim that a working custom server or a valid Cfx ticket already exists. No public server is a test target without authorization.
+The source server uses upstream's instance-wide LAN development mode for all clients, with scoped network restrictions. An OS-selective authentication-exemption fork is not implemented. A client-reported OS is not trusted platform attestation. The source recipe and binary distribution are being prepared separately; this repository does not contain a ready server bundle.
+
+This working development session does not establish a valid Cfx ticket or normal public-server admission. No public server is a test target without authorization.
 
 ## Start here
 

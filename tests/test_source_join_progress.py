@@ -1,6 +1,11 @@
 import io
+import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'native/windows-client'))
@@ -84,3 +89,56 @@ class SourceJoinProgressTests(unittest.TestCase):
                     'latest': {'tick_ms': 200, 'phase': 'resource_uri_without_mounter',
                                'scheme_class': expected},
                 })
+
+
+class StandaloneLogSelectionTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name).resolve()
+        self.script = self.root / 'source_join_progress.py'
+        shutil.copyfile(progress.__file__, self.script)
+        self.logs = self.root / 'chosen-installation' / 'logs'
+        self.logs.mkdir(parents=True)
+        self.log = self.logs / 'CitizenFX_log_2026-11-06T000000.log'
+        self.log.write_bytes(line(1, 'OnConnectionProgress: Handshaking with server...'))
+
+    def run_reader(self, *args):
+        return subprocess.run([sys.executable, '-B', str(self.script), *map(str, args)],
+                              cwd=self.root, capture_output=True, text=True, timeout=5)
+
+    def test_copied_standalone_cli_uses_only_the_explicit_installation(self):
+        for args in (('--log', self.log), ('--logs-dir', self.logs, self.log.name)):
+            with self.subTest(args=args):
+                result = self.run_reader(*args)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), {
+                    'counts': {'handshake_started': 1},
+                    'latest': {'tick_ms': 1, 'phase': 'handshake_started'},
+                })
+                self.assertNotIn(str(self.root), result.stdout)
+
+    def test_no_implicit_developer_installation_and_no_ambiguous_file_selection(self):
+        for args in ((self.log.name,), ('--log', self.log, self.log.name),
+                     ('--logs-dir', self.logs, '../' + self.log.name)):
+            with self.subTest(args=args):
+                self.assertEqual(self.run_reader(*args).returncode, 2)
+
+    def test_redirected_directory_or_file_is_refused_without_exporting_paths(self):
+        alias = self.root / 'redirected'
+        alias.symlink_to(self.logs, target_is_directory=True)
+        file_alias = self.logs / 'CitizenFX_log_2026-11-06T000001.log'
+        file_alias.symlink_to(self.log)
+        for selected in (alias / self.log.name, file_alias):
+            with self.subTest(selected=selected):
+                result = self.run_reader('--log', selected)
+                self.assertEqual(result.returncode, 1)
+                self.assertNotIn(str(self.root), result.stderr)
+                self.assertEqual(result.stdout, '')
+
+    def test_a_named_pipe_cannot_block_the_diagnostic_reader(self):
+        fifo = self.logs / 'CitizenFX_log_2026-11-06T000002.log'
+        os.mkfifo(fifo)
+        result = self.run_reader('--log', fifo)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, '')
