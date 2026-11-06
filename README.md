@@ -14,13 +14,15 @@ This project is not supported or endorsed by Cfx.re, Rockstar Games or Take-Two.
 
 The project owner has previously reported a usable local interface and single-player experience. On 6 November 2026, the recorded work was a preflight of 422 client files, 145 approved vendor program files and three game executables, together with two test groups of 9 and 14 checks. No client start, end-to-end session or server join was performed in that verification. Historical observations are not a fresh-install guarantee.
 
+A subsequent controlled client start on the same day stopped before the menu with Rockstar Launcher connection error **506**. The private crash package confirms that error; its older bundled Rockstar logs do not identify the current cause. A normal same-prefix Rockstar login/startup recovery is being investigated in [issue #7](https://github.com/EnteMods/fivem-macos/issues/7). The publication checks also passed 63 selected tests; this is not a full client or fresh-install acceptance run.
+
 The public upstream Windows-source reference is commit `88a413835e9d7f56633f249880a13f42297153a2`. The older native ARM64 patch queue has its own base and file pins in [config/native-port.json](config/native-port.json); do not assume both source bases are interchangeable. The separately installed official production client, content version `1257409`, remained unchanged during the recorded source-port work.
 
 Multiplayer is unresolved. Earlier measured attempts reached the client authentication interception point without a handler at the observed instance and time; the server rejected the request for a missing Cfx connection ticket. The public source does not establish a supported independent ticket issuer. The normal Wine component selection and its insecure-mode warning remain in effect. See [known issues](docs/KNOWN_ISSUES.md).
 
 ### Server compatibility
 
-Do not expect this client to join normal ticket-authenticated FiveM servers. Current testing is limited to the project's own isolated compatibility test environment. The planned server uses the official Recommended Linux server build `38317` in its documented LAN development mode; a complete join has not yet been demonstrated. An OS-selective authentication-exemption server fork is not implemented in this publication. A client-reported OS is not a trusted platform attestation.
+Do not expect this client to join normal ticket-authenticated FiveM servers. Current testing is limited to the project's own isolated compatibility test environment. The server now runs the official Recommended Linux build `38317` in its documented LAN development mode, with scoped network restrictions. TCP/UDP health checks and a blocked-source container check passed; an independent external blocked-source test was not available. A complete client join has not yet been demonstrated. An OS-selective authentication-exemption server fork is not implemented in this publication. A client-reported OS is not a trusted platform attestation.
 
 This restriction is a testing boundary, not a claim that a working custom server or a valid Cfx ticket already exists. No public server is a test target without authorization.
 
