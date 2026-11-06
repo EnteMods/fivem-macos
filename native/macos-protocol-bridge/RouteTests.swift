@@ -44,6 +44,21 @@ struct RouteTests {
                 print("ROUTE_CASE_FAILURE=\(index)")
             }
         }
+        let statuses: [(Int32?, Bool, HandoffOutcome, Bool)] = [
+            (0, true, .delivered, true), (6, true, .pending, false),
+            (2, true, .failed, false), (3, true, .failed, false),
+            (4, true, .failed, false), (5, true, .failed, false),
+            (99, true, .failed, false), (0, false, .failed, false),
+            (nil, false, .failed, false)
+        ]
+        for (index, status) in statuses.enumerated() {
+            let outcome = HandoffOutcome.from(exitStatus: status.0, normalExit: status.1)
+            if outcome != status.2 || outcome.shouldClose != status.3 || outcome.message.isEmpty {
+                failures += 1
+                print("STATUS_CASE_FAILURE=\(index)")
+            }
+        }
+        print("STATUS_CASES=\(statuses.count)")
         print("ROUTE_CASES=\(samples.count)")
         print("ROUTE_FAILURES=\(failures)")
         exit(failures == 0 ? 0 : 1)

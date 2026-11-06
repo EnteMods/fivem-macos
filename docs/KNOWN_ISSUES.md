@@ -27,6 +27,10 @@ After a successful local integrity preflight on 6 November, a controlled launch 
 
 In a subsequent retry, the owner completed normal authentication in the unchanged standalone Rockstar Launcher in the same prefix. Its live session was handed over without terminating it, and FiveM reached a visibly rendered menu. Fresh Rockstar logs also recorded service connection, handshake, PreInit and UI startup. This is one observed recovery; repeatability and persistent session reuse remain unverified. Authentication and licensing were not modified. See [issue #7](https://github.com/EnteMods/fivem-macos/issues/7).
 
+## Cfx account-linking bridge
+
+A normal Cfx browser return was confirmed by the owner with bridge 0.1.1 on 6 November. Its helper now uses the complete current launcher binding instead of comparing against an archived prelogin mount identity. Version 0.1.2 adds bridge-only closing after a normal secondary-process exit; pending or failed handoffs keep the window open. Fourteen Python tests and Swift route/status fixtures passed. The new close behavior has not been exercised through another real OAuth session. This is still an installation-specific helper, not a portable setup. See [bridge sources and limits](../native/macos-protocol-bridge/README.md). Account linking does not by itself establish a genuine multiplayer ticket.
+
 ## Multiplayer authentication
 
 Two earlier measured Wine connection attempts reached the authentication interception point with no handler at the observed instance and time. The ordinary request continued without `cfxTicket2`, and the server rejected the missing field. This establishes an observed boundary, not the identity or location of a ticket provider. Steam linking, Rockstar ownership and Cfx account linking are distinct states; none is shown to replace the missing provider.

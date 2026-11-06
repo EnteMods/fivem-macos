@@ -38,3 +38,26 @@ enum AuthRoute {
         (value >= 0x61 && value <= 0x66)
     }
 }
+
+// The secondary process exiting normally is the available handoff confirmation.
+enum HandoffOutcome: Equatable {
+    case delivered, pending, failed
+
+    static func from(exitStatus: Int32?, normalExit: Bool) -> HandoffOutcome {
+        guard normalExit, let status = exitStatus else { return .failed }
+        switch status {
+        case 0: return .delivered
+        case 6: return .pending
+        default: return .failed
+        }
+    }
+
+    var shouldClose: Bool { self == .delivered }
+    var message: String {
+        switch self {
+        case .delivered: return "Anmeldung an FiveM weitergegeben. Bitte dort fortfahren."
+        case .pending: return "Die Weitergabe läuft möglicherweise noch. Bitte FiveM prüfen."
+        case .failed: return "Die Weitergabe ist fehlgeschlagen. Bitte FiveM prüfen."
+        }
+    }
+}

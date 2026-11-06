@@ -1,13 +1,17 @@
 import AppKit
+import CryptoKit
 import Darwin
 import Foundation
 
 enum Handoff {
-    static func dispatch(_ data: Data) -> Bool {
+    static func dispatch(_ data: Data) -> HandoffOutcome {
         let helper = URL(fileURLWithPath: BuildConfiguration.helper)
         guard helper.resolvingSymlinksInPath().path == helper.path,
               let values = try? helper.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]),
-              values.isRegularFile == true, values.isSymbolicLink != true else { return false }
+              values.isRegularFile == true, values.isSymbolicLink != true,
+              let helperData = try? Data(contentsOf: helper), helperData.count <= 65_536,
+              SHA256.hash(data: helperData).map({ String(format: "%02x", $0) }).joined()
+                == BuildConfiguration.helperSHA256 else { return .failed }
         let child = Process()
         child.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
         child.arguments = [helper.path]
@@ -25,11 +29,12 @@ enum Handoff {
             try input.fileHandleForWriting.write(contentsOf: data)
             try input.fileHandleForWriting.close()
             child.waitUntilExit()
-            return child.terminationReason == .exit && child.terminationStatus == 0
+            return HandoffOutcome.from(exitStatus: child.terminationStatus,
+                                       normalExit: child.terminationReason == .exit)
         } catch {
             try? input.fileHandleForWriting.close()
             if child.isRunning { child.waitUntilExit() }
-            return false
+            return .failed
         }
     }
 }
@@ -62,12 +67,11 @@ final class BridgeDelegate: NSObject, NSApplicationDelegate {
         label.stringValue = "Anmeldung wird an FiveM weitergegeben …"
         let data = Data(text.utf8)
         DispatchQueue.global(qos: .userInitiated).async {
-            let success = Handoff.dispatch(data)
+            let outcome = Handoff.dispatch(data)
             DispatchQueue.main.async {
                 self.busy = false
-                self.label.stringValue = success
-                    ? "Anmeldung an FiveM weitergegeben. Bitte dort fortfahren."
-                    : "Die Weitergabe ist fehlgeschlagen. Bitte FiveM prüfen."
+                self.label.stringValue = outcome.message
+                if outcome.shouldClose { NSApp.terminate(nil) }
             }
         }
     }
