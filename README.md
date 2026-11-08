@@ -1,43 +1,68 @@
-# FiveM on Apple Silicon: source-port work
+# FiveM for Apple Silicon: experimental source port
 
-This repository contains source work and diagnostic tools for running a FiveM client on Apple Silicon. It is an experimental port, not a packaged client or a promise of multiplayer compatibility. You need your own legitimately obtained game and client files. This source release contains no game assets, official client binaries, runtime bundles, account profiles, tickets, or SDK binaries.
-
-## AI-assisted development and help wanted
-
-This project was developed with substantial help from AI coding agents, directed by the project owner. Review the code, test coverage and stated limits rather than assuming that generated changes are correct.
-
-**A legitimate solution for the missing `cfxTicket2` is still being sought. Help is welcome.** Useful contributions include reproducible ordinary Wine/API compatibility findings, documented authorized provider interfaces, build portability fixes and independent testing. Please keep observations separate from hypotheses and never post credentials, ticket values, proprietary DLL payloads or game files in issues.
-
-This project is not supported or endorsed by Cfx.re, Rockstar Games or Take-Two.
+Experimental FiveM client source port for Apple Silicon. This repository is
+not an installer or a compatibility promise. Bring your own legitimate game
+and client files. No game assets, official binaries, runtime bundles, account
+profiles, tickets, or SDK binaries are included.
 
 ## Current status
 
-The project owner has previously reported a usable local interface and single-player experience. On 6 November 2026, the recorded work was a preflight of 422 client files, 145 approved vendor program files and three game executables, together with two test groups of 9 and 14 checks. No client start, end-to-end session or server join was performed in that verification. Historical observations are not a fresh-install guarantee.
+Status snapshot: 8 November 2026. Verified local runs are separated from staged updates and unfinished installation work.
 
-A subsequent controlled client start on the same day stopped before the menu with Rockstar Launcher connection error **506**. After the owner completed a normal login in the unchanged standalone Rockstar Launcher in the same prefix, a retry reached the FiveM menu. The live Rockstar session was handed over without a timeout or forced termination. This single successful recovery does not establish a persistent fix; [issue #7](https://github.com/EnteMods/fivem-macos/issues/7) remains open for startup reliability. The publication checks also passed 63 selected tests; this is not a full client or fresh-install acceptance run.
-
-The public upstream Windows-source reference is commit `88a413835e9d7f56633f249880a13f42297153a2`. The older native ARM64 patch queue has its own base and file pins in [config/native-port.json](config/native-port.json); do not assume both source bases are interchangeable. The separately installed official production client, content version `1257409`, remained unchanged during the recorded source-port work.
-
-**A real join to the project's isolated public-source LAN development server now works.** On 6 November, the existing Mac client completed resource download, received the server's protocol acknowledgement and finished loading the game. The server reported one player; the owner confirmed character movement, camera control and general interaction. See the [tested session and its limits](docs/TESTED_LAN_SESSION.md). This was an existing locally bound installation, not a fresh install or a performance benchmark.
-
-Normal ticket-authenticated multiplayer remains unresolved. Earlier measured attempts reached the client authentication interception point without a handler at the observed instance and time; the server rejected the request for a missing Cfx connection ticket. The public source does not establish a supported independent ticket issuer. The normal Wine component selection and its insecure-mode warning remain in effect. See [known issues](docs/KNOWN_ISSUES.md).
-
-### Server compatibility
-
-Do not expect this client to join normal ticket-authenticated FiveM servers. Testing is limited to the project's own network-restricted development environment. The unchanged official Recommended `38317` binary in LAN mode failed because this source client had no mounter for a `ci` resource URI. Replacing that test instance with the matching public-source FXServer built from `88a413835e9d7f56633f249880a13f42297153a2` resolved the observed resource error and allowed the tested game session. No client URI rewrite or ci-provider imitation was added. See [issue #8](https://github.com/EnteMods/fivem-macos/issues/8).
-
-The source server uses upstream's instance-wide LAN development mode for all clients, with scoped network restrictions. An OS-selective authentication-exemption fork is not implemented. A client-reported OS is not trusted platform attestation. The source recipe and binary distribution are being prepared separately; this repository does not contain a ready server bundle.
-
-This working development session does not establish a valid Cfx ticket or normal public-server admission. No public server is a test target without authorization.
+| Area | Current evidence | Boundary |
+| --- | --- | --- |
+| Main app | Native ARM64 app 0.1.1 with AuthBridge 0.1.2. Spotlight, signature, selftest, and the earlier 422-file profile `--check` passed. The 0.1.1 microphone metadata fix plus owner-granted Documents/microphone permissions cleared the observed resource hang for unchanged Windows client 1257409 on V4, followed by a verified join to the updated V5 server. Download, protocol ACK, network game initialization, and final game load completed; the owner confirmed joining. | V4 and V5 joins on one installation; the revised original-GTA binding still needs a live control test. Full voice, performance, and fresh-install acceptance remain untested. No TCC database change or authentication exception was made. |
+| Production client update | Version 1257529 is isolated and staged; all 419 files were checked, with 61 changes. All three public update DLLs compiled and named-consumer checks passed. Pinned Wine exports contain the names flagged by two pre-existing API-set checker results. | Not activated. External runtime behavior remains unproven. |
+| Client and server source | Tested source-LAN history uses upstream commit `88a413835e9d7f56633f249880a13f42297153a2`. Upstream master `5c3065c` is ten commits ahead. Recommended server `38435` is a comparison reference. | The pinned source plus backports is not a full build of that newer master. |
+| LAN session | An existing Windows client 1257409 joined the updated V5 source-LAN server after the microphone metadata and owner-granted macOS permissions were corrected. Resource download, protocol ACK, network game initialization, and final game load completed. | One installation; the V5 session ended normally and the server remained healthy. Voice chat, performance, a fresh install, normal public-server admission, and ticket authentication are not established. |
+| Server shutdown | V5 passed 15 CitiTest cases (2,812,163 assertions), five natural shutdown cycles and a real Mac client join after deployment. | A selected upstream backport over the V4 source runtime; a clean public bootstrap and public binary distribution remain open. |
 
 ## Start here
 
-- [Architecture and boundaries](docs/ARCHITECTURE.md)
-- [Build prerequisites and current limitations](docs/BUILDING.md)
-- [Source and official-client updates](docs/UPDATES.md)
-- [Open issues](docs/KNOWN_ISSUES.md)
-- [Isolated LAN test scope and read-only server inspection](server/README.md)
+The [documentation index](docs/INDEX.md) maps the detailed records.
 
-The checked-in `native/client-profile/run_current.py` is tied to an existing local binding and helper artifacts. It is included as source evidence, not as a portable fresh-install launcher. A safe per-install bootstrap is still missing. There is no ready-to-use DMG or supported one-command installation in this repository.
+- [Architecture](docs/ARCHITECTURE.md) separates the native ARM64 and Windows-source tracks.
+- [Building](docs/BUILDING.md) lists toolchains and explains the fresh-install limits.
+- [Updates](docs/UPDATES.md) describes source pins, candidate isolation, and rollback.
+- [Known issues](docs/KNOWN_ISSUES.md) tracks open work and observed boundaries.
+- [LAN session](docs/TESTED_LAN_SESSION.md) records the historical join and gameplay evidence.
+- [November 8 update](docs/UPDATES-2026-11-08.md) records the app, server and ticket follow-up.
+- [Server overview](server/README.md) explains the tested development setup.
 
-This release is source-available: sale of the project's original contributions is restricted under its current license. Read the exact license and upstream notices accompanying the release; upstream material has its own terms. Earlier versions granted under MIT remain subject to the permissions granted for those versions; upstream material retains its own terms.
+## Installation boundary
+
+The local client binding in `native/client-profile/run_current.py` depends on
+installation-specific state and helper artifacts. It is source evidence, not a
+portable launcher.
+
+The schema 2 original-GTA binding has been applied locally, but its live control test is blocked while the Mac is locked; the earlier clone still exists. A per-install bootstrap, fresh-install workflow, and supported one-command
+install are unfinished. No ready DMG or client binary download is included.
+
+## Compatibility limits
+
+Normal Cfx ticket-authenticated multiplayer remains unresolved. The public
+source does not identify a supported independent `cfxTicket2` issuer. No
+ticket solution, authentication bypass, or regular anti-cheat compatibility
+is claimed.
+
+Wine keeps its ordinary component selection and insecure-mode warning. The
+tested server uses upstream's instance-wide `sv_lan true` mode. It is not an
+OS-selective exception; a client-reported OS is not platform attestation.
+
+Do not use an unauthorized public server as a test target. The LAN join does
+not establish public-server admission or repeatable long-duration play.
+
+## Contributing and licensing
+
+Contributions can document reproducible Wine/API findings, authorized
+provider interfaces, build portability, or independent tests. Separate
+observations from hypotheses. Do not post credentials, ticket values, game
+files, or proprietary DLL payloads. Cfx.re, Rockstar Games, and Take-Two do
+not support or endorse this project.
+
+Sale of original project contributions is restricted by the included license.
+Earlier MIT grants remain valid for the versions they covered. Upstream and
+third-party material keeps its own terms.
+
+Read [LICENSE](LICENSE), [license files](LICENSES/), and [third-party
+notices](THIRD_PARTY_NOTICES.md) before redistribution.

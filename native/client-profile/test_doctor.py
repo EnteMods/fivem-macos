@@ -9,7 +9,7 @@ import doctor
 
 class ValidatorTest(unittest.TestCase):
     def setUp(self):
-        self.tmp=tempfile.TemporaryDirectory(); self.root=Path(self.tmp.name)
+        self.tmp=tempfile.TemporaryDirectory(); self.root=Path(self.tmp.name).resolve()/'FiveM-macOS'
         self.prefix=self.root/doctor.PREFIX; self.drive=self.prefix/'drive_c'; self.stage=self.root/doctor.STAGE; self.game=self.root/doctor.GAME
         self.stage.mkdir(parents=True); self.game.mkdir(parents=True); (self.prefix/'dosdevices').mkdir()
         (self.prefix/'dosdevices/c:').symlink_to('../drive_c'); (self.prefix/'dosdevices/g:').symlink_to(self.game)
@@ -48,4 +48,35 @@ class ValidatorTest(unittest.TestCase):
         (self.game/'GTA5.exe').rename(self.game/'gta5.EXE');self.assertEqual(self.run_check()['game_executables'],3)
     def test_hard_link(self):
         p=self.stage/'code/1.dll';os.link(p,self.stage/'code/alias.dll');self.fails()
+    def canonical(self):
+        target=self.root.parent/doctor.SIBLING_GAME
+        target.parent.mkdir(parents=True)
+        self.game.rename(target);self.game=target
+        self.profile.update(schema=2,game=dict(doctor.GAME_REFERENCE))
+        link=self.prefix/'dosdevices/g:';link.unlink();link.symlink_to(target)
+    def test_canonical_success(self):
+        self.canonical();self.assertEqual(self.run_check()['game_executables'],3)
+        self.assertEqual(doctor.game_location(self.profile,self.root)[2],self.game)
+    def test_canonical_clone_mapping_rejected(self):
+        clone=self.game;self.canonical();clone.mkdir()
+        link=self.prefix/'dosdevices/g:';link.unlink();link.symlink_to(clone);self.fails()
+    def test_schema1_cannot_select_sibling(self):
+        self.canonical();self.profile['schema']=1;self.fails()
+    def test_schema2_cannot_select_clone(self):
+        self.profile['schema']=2;self.fails()
+    def test_canonical_arbitrary_path_rejected(self):
+        self.canonical();self.profile['game']['path']='../'+doctor.SIBLING_GAME;self.fails()
+    def test_canonical_extra_reference_field_rejected(self):
+        self.canonical();self.profile['game']['absolute']=str(self.game);self.fails()
+    def test_canonical_symlink_directory_rejected(self):
+        self.canonical();base=self.root.parent/'GTA-V-macOS';other=base.with_name('redirect')
+        base.rename(other);base.symlink_to(other,target_is_directory=True);self.fails()
+    def test_canonical_symlink_executable_rejected(self):
+        self.canonical();p=self.game/'GTA5.exe';p.unlink();p.symlink_to(self.game/'PlayGTAV.exe');self.fails()
+    def test_canonical_executable_bytes_rejected(self):
+        self.canonical();(self.game/'GTA5.exe').write_bytes(b'changed');self.fails()
+    def test_canonical_hardlink_executable_rejected(self):
+        self.canonical();os.link(self.game/'GTA5.exe',self.game/'extra.exe');self.fails()
+    def test_boolean_schema_rejected(self):
+        self.profile['schema']=True;self.fails()
 if __name__=='__main__': unittest.main()

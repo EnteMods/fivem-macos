@@ -19,13 +19,17 @@ The unchanged official Recommended server with instance-wide LAN mode was theref
 
 ## Source-server shutdown
 
-The isolated public-source server starts the required resources, but a SIGINT stop logs `Quitting` and exits 139 with OOM false. A single isolated reproduction localized a null access in `NodeParentEnvironment::Tick()` during `m_platform->DrainTasks()`, using matching ELF build IDs. The source has an unjoined server event loop and a cross-thread plain termination flag. A shutdown lifetime race is the working hypothesis; a full backtrace and tested repair are still missing. No exit code is hidden or changed to report success.
+An earlier source-server version exited 139 after SIGINT. The deployed V5 combines the pinned 88a source, V4 shutdown changes and selected upstream changes from `789269293f241bca2098adb96db4a5a7319105d4` across seven files. It passed 15 CitiTest cases with 2,812,163 assertions and five natural SIGINT/console shutdowns. A real client subsequently joined and quit normally, leaving the server healthy. This evidence applies to that deployment; a clean public bootstrap remains open.
 
 ## Intermittent Rockstar 506 and observed recovery
 
 After a successful local integrity preflight on 6 November, a controlled launch displayed Rockstar connection error 506 and stopped before the menu or a server join. There was no automatic login timeout. The private Cfx log confirms this error, but the accompanying Rockstar log entries are from the preceding day. An expired session, launcher/service startup condition or SDK connectivity is a hypothesis, not an established cause.
 
 In a subsequent retry, the owner completed normal authentication in the unchanged standalone Rockstar Launcher in the same prefix. Its live session was handed over without terminating it, and FiveM reached a visibly rendered menu. Fresh Rockstar logs also recorded service connection, handshake, PreInit and UI startup. This is one observed recovery; repeatability and persistent session reuse remain unverified. Authentication and licensing were not modified. See [issue #7](https://github.com/EnteMods/fivem-macos/issues/7).
+
+## Native microphone permission and observed join
+
+On 8 November, native diagnostics attributed the resource-download hang to a persistent TCC abort inside Wine: `local.fivem-macos.launcher` lacked `NSMicrophoneUsageDescription`. The 0.1.1 build/app metadata correction and the owner granting standard macOS Documents and microphone permissions cleared the observed hang for unchanged client 1257409 on the live V4 server and subsequently on the deployed V5 server. The verified sequence completed resource download, protocol acknowledgement, network game initialization, and final game load; the owner confirmed joining. These joins establish behavior on one installation, not full voice, performance, or fresh-install acceptance. No TCC database change or authentication exception was made.
 
 ## Cfx account-linking bridge
 
@@ -45,7 +49,9 @@ For the first environment, a bounded 43,656-byte export span matched between the
 
 ## Installation, updates and display
 
+- The schema 2 original-GTA binding has been applied locally, but its live control test is blocked while the Mac is locked. The earlier clone still exists; cleanup is not complete.
+- Client content 1257529 and three associated upstream DLLs are staged only; their runtime behavior is unverified.
 - A portable fresh-install workflow and per-install binding/receipt bootstrap do not yet exist. Existing profile and launcher helpers are tied to a prior local setup.
 - Source-client update, rollback and regression gates need a reproducible end-to-end workflow. Official production files must stay separate from source candidates.
 - Retina resize, fullscreen transitions and mouse coordinate behavior require consistent device-level QA. Earlier partial observations are not a complete current fix.
-- One isolated public-source LAN join, resource load and basic game interaction have been demonstrated and confirmed by the owner. Repeatable disconnect/reconnect, long-duration play, multiple clients, broader resources and performance remain unverified. No independent external blocked-source test was available. The server is an instance-wide LAN development configuration, not an OS-selective authentication fork.
+- Isolated V4 and V5 source-LAN joins were demonstrated on one installation; basic game interaction was confirmed in the earlier session. Repeatable disconnect/reconnect, long-duration play, multiple clients, broader resources and performance remain unverified. No independent external blocked-source test was available. The server is an instance-wide LAN development configuration, not an OS-selective authentication fork.

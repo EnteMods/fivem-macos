@@ -16,6 +16,8 @@ PROFILE = ROOT / 'config/active-client-profile.json'
 PREFIX = 'prefixes/fivem-source-update-prelogin-1257409'
 STAGE = PREFIX + '/drive_c/source-update-game-client'
 GAME = 'build/source-update-candidate-nqwlz36g/game-run/gta-v-legacy'
+SIBLING_GAME = 'GTA-V-macOS/prefixes/rockstar-legacy/drive_c/Program Files/Rockstar Games/Grand Theft Auto V Legacy'
+GAME_REFERENCE = {'kind': 'sibling-install', 'path': SIBLING_GAME}
 VENDOR_MANIFEST = 'config/rockstar-code-reuse-current-20261106.json'
 VENDOR_SHA = '3d1befb9a11e9d2e98203fd6cf56642e1e7397460b922b85ad72299b5035f1a4'
 STAGE_INVENTORY_SHA = 'f7f865eb7f7df0e6c11e8b8eaccb4fb6b10e63b337eb379a8b7ba6144e242640'
@@ -62,6 +64,16 @@ def fingerprint(path):
 def inventory_hash(rows):
     return hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
+def game_location(profile, root=ROOT):
+    """Select only the historical clone or the one explicitly supported sibling."""
+    if type(profile.get('schema')) is int and profile['schema'] == 1 and profile.get('game') == GAME:
+        anchor, relative = root, GAME
+    elif type(profile.get('schema')) is int and profile['schema'] == 2 and profile.get('game') == GAME_REFERENCE:
+        anchor, relative = root.parent, SIBLING_GAME
+    else:
+        raise Invalid('GAME_BINDING')
+    return anchor, relative, plain(anchor, relative, True)
+
 def check_rows(root, base, rows):
     if not isinstance(rows, list) or not rows: raise Invalid('INVENTORY')
     seen = set()
@@ -81,15 +93,16 @@ def load_graphics(root):
     return mod
 
 def validate(profile, root=ROOT, verify_graphics=True):
-    if profile.get('schema') != 1 or profile.get('role') != 'SourceDev' or profile.get('code_verified_is_auth_ready') is not False:
+    if type(profile.get('schema')) is not int or profile['schema'] not in (1, 2) or profile.get('role') != 'SourceDev' or profile.get('code_verified_is_auth_ready') is not False:
         raise Invalid('SCHEMA')
-    if (profile.get('prefix') != PREFIX or profile.get('stage') != STAGE or profile.get('game') != GAME or profile.get('source_revision') != '88a413835e9d7f56633f249880a13f42297153a2' or profile.get('official_version') != 1257409):
+    if (profile.get('prefix') != PREFIX or profile.get('stage') != STAGE or profile.get('source_revision') != '88a413835e9d7f56633f249880a13f42297153a2' or profile.get('official_version') != 1257409):
         raise Invalid('BINDING')
     prefix = plain(root, PREFIX, True); drive = plain(root, PREFIX + '/drive_c', True)
     info = prefix.stat(); drive_info = drive.stat()
     if profile.get('prefix_identity') != {'device':info.st_dev,'inode':info.st_ino} or profile.get('drive_identity') != {'device':drive_info.st_dev,'inode':drive_info.st_ino}:
         raise Invalid('PREFIX_REPLACED')
-    plain(root, STAGE, True); game = plain(root, GAME, True)
+    plain(root, STAGE, True)
+    game_anchor, game_relative, game = game_location(profile, root)
     link = prefix / 'dosdevices/g:'
     plain(root, PREFIX + '/dosdevices', True)
     if not link.is_symlink() or link.resolve(strict=True) != game.resolve(strict=True): raise Invalid('G_MAPPING')
@@ -118,7 +131,7 @@ def validate(profile, root=ROOT, verify_graphics=True):
             game_names[key] = item.name
     if set(game_names) != {'gta5.exe', 'playgtav.exe', 'gtavlauncher.exe'}: raise Invalid('GAME_INVENTORY')
     resolved_exes = [dict(row, path=game_names[row['path'].casefold()]) for row in exes]
-    game_count = check_rows(root, GAME, resolved_exes)
+    game_count = check_rows(game_anchor, game_relative, resolved_exes)
     ini = plain(root, STAGE + '/CitizenFX.ini')
     cfg = configparser.ConfigParser(); cfg.read(ini, encoding='utf-8-sig')
     if cfg.get('Game','IVPath').rstrip('\\').upper() != 'G:': raise Invalid('GAME_CONFIG')

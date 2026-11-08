@@ -18,8 +18,8 @@ ROOT = doctor.ROOT
 HELPER = ROOT / 'build/source-update-candidate-nqwlz36g/resume-candidate.py'
 HELPER_SHA = '7ebcacf4029947eff1868c8f6485c9975bbe434d12be4880f850b271be89efe0'
 BINDING = ROOT / 'config/current-client-binding-20261106.json'
-BINDING_SHA = '23de6d2bb1d523a43e476208cd54d813c84eab2bb90406893211abbb8854353a'
-PROFILE_SHA = '8236ce767f879717bd917cbd81ce7afde86d17dfc79d729c72fc25e049f05cc9'
+BINDING_SHA = '8ace2ab06d0660fe4ee4f5fef62c979a158a797ea3dfdacc6f821d1dd8e77a1f'
+PROFILE_SHA = '2c109e0216686e87782d509776452b8eaa64ef2f88b7923fe7c5ba97e894171d'
 OLD_MARKER_SHA = '1abe0d42a37cf08b69b30c083e0e9215a9814f2bacce93b4e6cdf202bfa82f99'
 OLD_FIRST_STATUS_SHA = 'c4f67299aabebff30a8a2c4fc7d36716ae0939d60da9542bf60ad526e66ac43c'
 OLD_RECEIPT_SHA = '68be4e8f75e00f526f134d8088b1cb84d3bc3ee3cf56acf50f1142d72e6345c7'
@@ -47,6 +47,14 @@ def check_binding(helper):
     profile = json.loads(checked(doctor.PROFILE, PROFILE_SHA))
     if doctor.validate(profile)['status'] != 'OK':
         raise RuntimeError('Active profile did not pass full doctor')
+    if profile['schema'] == 2:
+        if (record.get('schema') != 2 or record.get('game_reference') != doctor.GAME_REFERENCE
+                or record.get('active_profile_sha256') != PROFILE_SHA):
+            raise RuntimeError('Canonical game binding differs')
+    elif record.get('schema') != 1:
+        raise RuntimeError('Historical game binding differs')
+    # The frozen helper accepts a verified game directory; its prior status stays historical.
+    helper.game.GAME = doctor.game_location(profile)[2]
     prefix = helper.game.PREFIX
     current = {'device': prefix.stat().st_dev, 'inode': prefix.stat().st_ino}
     drive = prefix / 'drive_c'
