@@ -49,7 +49,7 @@ For the first environment, a bounded 43,656-byte export span matched between the
 
 ## Installation, updates and display
 
-- The schema 2 original-GTA binding has been applied locally, but its live control test is blocked while the Mac is locked. The earlier clone still exists; cleanup is not complete.
+- The schema 2 original-GTA binding passed a real V5 join and normal quit on the existing installation. Open-file evidence identified 179 original-installation files, including 176 RPF archives, and none from the redundant clone. The clone was removed after the complete stored metadata inventories were rechecked under the prefix lock; the final 422/145/3 preflight passed. This does not establish a portable installer.
 - Client content 1257529 and three associated upstream DLLs are staged only; their runtime behavior is unverified.
 - A portable fresh-install workflow and per-install binding/receipt bootstrap do not yet exist. Existing profile and launcher helpers are tied to a prior local setup.
 - Source-client update, rollback and regression gates need a reproducible end-to-end workflow. Official production files must stay separate from source candidates.

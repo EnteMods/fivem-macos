@@ -257,6 +257,7 @@ def transition(action, expected_sha):
     with locked() as prefix:
         check_state(plan, prefix, ('old',) if action == 'apply' else ('old', 'new'))
         if action == 'rollback':
+            check_comparison(plan['comparison_sha256'])
             restore(plan, prefix)
             subprocess.run([sys.executable, '-B', str(TARGETS['launcher']), '--check'], check=True)
         else:

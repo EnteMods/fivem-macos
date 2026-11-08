@@ -35,7 +35,7 @@ The local client binding in `native/client-profile/run_current.py` depends on
 installation-specific state and helper artifacts. It is source evidence, not a
 portable launcher.
 
-The schema 2 original-GTA binding has been applied locally, but its live control test is blocked while the Mac is locked; the earlier clone still exists. A per-install bootstrap, fresh-install workflow, and supported one-command
+The schema 2 original-GTA binding passed a real V5 world-entry and normal-quit control test; the redundant internal game clone has been removed. A per-install bootstrap, fresh-install workflow, and supported one-command
 install are unfinished. No ready DMG or client binary download is included.
 
 ## Compatibility limits

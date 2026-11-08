@@ -65,6 +65,15 @@ class TransactionTest(unittest.TestCase):
     def test_rollback_refuses_unrelated_g_mapping(self):
         transaction.atomic_link(self.prefix/'dosdevices/g:', 'third-game')
         with self.assertRaisesRegex(RuntimeError, 'mapping changed'): transaction.restore(self.plan, self.prefix)
+    def test_rollback_checks_game_before_restoring_any_active_object(self):
+        for key, path in self.targets.items(): path.write_bytes(self.new[key])
+        transaction.atomic_link(self.prefix/'dosdevices/g:', self.plan['new_g'])
+        with patch.object(transaction, 'load_plan', return_value=self.plan), patch.object(transaction, 'locked', return_value=nullcontext(self.prefix)), patch.object(transaction, 'check_comparison', side_effect=RuntimeError('clone unavailable')) as comparison, patch.object(transaction.subprocess, 'run') as run:
+            with self.assertRaisesRegex(RuntimeError, 'clone unavailable'):
+                transaction.transition('rollback', 'b'*64)
+        comparison.assert_called_once_with(self.plan['comparison_sha256'])
+        run.assert_not_called()
+        transaction.check_state(self.plan, self.prefix, ('new',))
     def test_failed_postapply_validation_restores_every_target(self):
         with patch.object(transaction, 'load_plan', return_value=self.plan), patch.object(transaction, 'locked', return_value=nullcontext(self.prefix)), patch.object(transaction, 'check_comparison'), patch.object(transaction.doctor, 'validate', side_effect=RuntimeError('postapply failed')):
             with self.assertRaisesRegex(RuntimeError, 'postapply failed'): transaction.transition('apply', 'b'*64)

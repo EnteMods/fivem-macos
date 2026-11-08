@@ -38,7 +38,7 @@ If the transaction fails or the subsequent actual test warrants reverting while 
 python3 -B native/client-profile/canonical_game_transaction.py rollback --plan-sha256 <reviewed-plan-sha256>
 ```
 
-Rollback accepts an old, new or interrupted mixture of the exact planned bytes; it restores all four old values and runs a fresh old launcher preflight. A third-party modification, prefix replacement, missing/changed old game, or running client requires investigation rather than overwriting it. Neither direction changes the contents or pins of helper snapshots.
+Rollback accepts an old, new or interrupted mixture of the exact planned bytes. Before changing any active object, it rechecks the complete pinned comparison and both game trees; a removed or changed clone therefore stops rollback without changing the working schema-2 binding. It then restores all four old values and runs a fresh old launcher preflight. A third-party modification, prefix replacement, missing/changed old game, or running client requires investigation rather than overwriting it. Neither direction changes the contents or pins of helper snapshots.
 
 ## Verification
 
@@ -49,3 +49,9 @@ python3 -B native/client-profile/run_current.py --check
 ```
 
 The isolated fixtures cover both schemas, path/reference rejection, parent/executable symlinks, hard links, changed executable bytes, stale G: mapping, unchanged old-schema support, validated helper-path assignment before candidate verification, pin derivation from real bytes, interrupted-state restoration, unrelated-change rejection, and rollback after failed postapply validation. These checks do not establish a successful client/server session.
+
+## Existing-installation acceptance (8 November 2026)
+
+The original-game binding passed a real restricted V5 join through visible world entry and normal quit. Open-file metadata identified 179 original-installation files, including 176 RPF archives, and zero clone files. A separately scoped cleanup subsequently removed the redundant 553-entry game clone under the prefix lock after the pinned inventories and open-handle checks passed. The final 422/145/3 preflight passed.
+
+The old clone rollback is no longer available; the CLI refuses it before rewriting active files. Historical direct helper/schema-1 paths remain historical. The 37 fixture tests include refusal before any active-object change when clone validation fails. This is existing-installation acceptance, not a portable bootstrap or normal ticket-authenticated admission.
